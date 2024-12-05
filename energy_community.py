@@ -13,8 +13,8 @@ class EnergyCommunity:
         Initialize the energy community
         Args:
             params (dictionary):  a dictionary containing the following parameters :
-                self.n_households (int): number of households in the community
-                self.key (string): repartition key, either fix1round, fixmultiround, prorata, hybrid
+                n_households (int): number of households in the community
+                key (string): repartition key, either fix1round, fixmultiround, prorata, hybrid
             
                     fix1round: the production is equally distributed to the consumers in 1 round,
                                 if the consumer's consumption is lower than what he gets, the rest is injected to the grid
@@ -27,6 +27,17 @@ class EnergyCommunity:
                                 
                     hybrid: the production is first distributed to the consumers in 1 round, 
                             then the rest is distributed to the consumers to the proportion of their consumption on the total consumption of the community
+                
+                available_roof_area (array of float): available roof area where PV panels can be installed (m^2), in an array if multiple groups of PV panels 
+                                                      in different directions and inclinations are installed
+                PV_inclination (array of float): inclination of the PV panels (degrees compared to ground), in an array if multiple groups of PV panels
+                PV_orientation (array of float): orientation of the PV panels (degrees compared to north), in an array if multiple groups of PV panels
+                PV_efficiency (float): efficiency of the PV panels (%)
+                
+                sharing_price (float): price of the energy shared between the consumers (€/kWh). Price considered fixed along the year
+                grid_price (float): price of the energy taken from the grid (€/kWh). Price considered fixed along the year (may be modified in the future)
+                grid_injection_price (float): price of the energy injected to the grid (€/kWh). Price considered fixed along the year (may be modified in the future)
+                
         
         """
         self.key = params['key']
@@ -36,6 +47,27 @@ class EnergyCommunity:
         self.production = 0 
         self.taken_to_grid = np.zeros(self.n_households)
         self.injected_to_grid = 0
+        
+        self.available_roof_area = params['available_roof_area']
+        self.PV_inclination = params['PV_inclination']
+        self.PV_orientation = params['PV_orientation']
+        self.PV_efficiency = params['PV_efficiency']
+        
+        self.sharing_price = params['sharing_price']
+        self.grid_price = params['grid_price']
+        self.grid_injection_price = params['grid_injection_price']
+        
+        self.n_elevators = params['n_elevators']
+        self.elevator_consumption = params['elevator_consumption']
+        self.n_floor = params['n_floor']
+        
+        self.common_area = params['common_area'] # for heating and lighting
+        
+
+        self.electric_heating = params['electric_heating'] # if false, not taken into account
+        if self.electric_heating:
+            self.type_heating = params['type_heating'] # either electric boiler, heating or electric radiators
+            self.common_area_volume = params['common_area_volume'] # volume of the common area (m^3)
         
         
         
