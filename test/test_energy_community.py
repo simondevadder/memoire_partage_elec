@@ -26,8 +26,6 @@ def test_init():
 #test_init()
     
 def test_repartition():
-    
-    
     keys = ["fix1round", "fixmultiround", "prorata", "hybrid"]
     for key in keys :
         params = {'n_households': 3, 'key': key}

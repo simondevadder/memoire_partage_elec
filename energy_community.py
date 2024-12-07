@@ -28,11 +28,11 @@ class EnergyCommunity:
                     hybrid: the production is first distributed to the consumers in 1 round, 
                             then the rest is distributed to the consumers to the proportion of their consumption on the total consumption of the community
                 
-                available_roof_area (array of float): available roof area where PV panels can be installed (m^2), in an array if multiple groups of PV panels 
-                                                      in different directions and inclinations are installed
+               
                 PV_inclination (array of float): inclination of the PV panels (degrees compared to ground), in an array if multiple groups of PV panels
                 PV_orientation (array of float): orientation of the PV panels (degrees compared to north), in an array if multiple groups of PV panels
                 PV_efficiency (float): efficiency of the PV panels (%)
+                PV_area (array of float): area of the PV panels (m^2), in an array if multiple groups of PV panels
                 
                 sharing_price (float): price of the energy shared between the consumers (€/kWh). Price considered fixed along the year
                 grid_price (float): price of the energy taken from the grid (€/kWh). Price considered fixed along the year (may be modified in the future)
@@ -40,6 +40,11 @@ class EnergyCommunity:
                 
         
         """
+        
+        self.longitude = 4.3522  #default = 4.3522  brussels
+        self.latitude = 50.85    #default = 50.85
+        self.TUTC = 1 #default = 1, 2 in summer time
+        
         self.key = params['key']
         self.n_households = params['n_households']
         self.consumption = np.zeros(self.n_households)
@@ -48,10 +53,10 @@ class EnergyCommunity:
         self.taken_to_grid = np.zeros(self.n_households)
         self.injected_to_grid = 0
         
-        self.available_roof_area = params['available_roof_area']
         self.PV_inclination = params['PV_inclination']
         self.PV_orientation = params['PV_orientation']
         self.PV_efficiency = params['PV_efficiency']
+        self.PV_area = params['PV_area']
         
         self.sharing_price = params['sharing_price']
         self.grid_price = params['grid_price']
@@ -69,6 +74,40 @@ class EnergyCommunity:
             self.type_heating = params['type_heating'] # either electric boiler, heating or electric radiators
             self.common_area_volume = params['common_area_volume'] # volume of the common area (m^3)
         
+    
+    
+    def func_compute_production(self, DHI, DNI, day, hour ):
+        """ This function compute the irradiance on the PV panels at a given time step, and set the production of the community at time t
+
+        Args:
+            DHI (float): Diffuse Horizontal Irradiance (W/m^2), taken from the weather data
+            DNI (float): Direct Normal Irradiance (W/m^2), taken from the weather data
+            day (int): day number (jan 1 : day =1)
+            hour (int): hour of the day (0 to 23)
+            
+        Returns:
+            G (array): Irradiance on the PV panels (W/m^2) for each PV panel group
+        """
+        LSTM = 15 *self.TUTC  # Local Standard Time Meridian
+        B = 360/365 * (day - 81) 
+        EoT = 9.87 * np.sin(2*B) - 7.53 * np.cos(B) - 1.5 * np.sin(B)  # Equation of Time (minutes)
+        TC = 4 * (self.longitude - LSTM) + EoT  # Time Correction (minutes)
+        LST = hour + TC/60  # Local Solar Time (hours)
+        HRA = 15 * (LST - 12)  # Hour Angle (degrees)
+        delta = -23.45 * np.cos(360/365 * (day + 10))  # Declination Angle (degrees)
+        alpha = np.arcsin(np.sin(delta) * np.sin(self.latitude) + np.cos(delta) * np.cos(self.latitude) * np.cos(HRA))  # Solar Altitude Angle (degrees)
+        azimuth = np.arccos((np.sin(delta) * np.cos(self.latitude) - np.cos(delta) * np.sin(self.latitude) * np.cos(HRA)) / np.cos(alpha))  # Solar Azimuth Angle (degrees)
+        
+        G = DNI * (np.cos(alpha)*np.sin(self.PV_inclination)*np.cos(self.PV_orientation - azimuth) + np.sin(alpha) * np.cos(self.PV_inclination)) + DHI * (1 + np.cos(self.PV_inclination))/2
+        
+        production = 0
+        for i in range(len(G)):
+            production += G[i] * self.PV_area[i] * self.PV_efficiency
+        self.production = production
+        
+        return G
+            
+            
         
         
         
