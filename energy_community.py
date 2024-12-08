@@ -53,8 +53,8 @@ class EnergyCommunity:
         self.taken_to_grid = np.zeros(self.n_households)
         self.injected_to_grid = 0
         
-        self.PV_inclination = params['PV_inclination']
-        self.PV_orientation = params['PV_orientation']
+        self.PV_inclination = np.radians(params['PV_inclination'])
+        self.PV_orientation = np.radians(params['PV_orientation'])
         self.PV_efficiency = params['PV_efficiency']
         self.PV_area = params['PV_area']
         
@@ -88,18 +88,30 @@ class EnergyCommunity:
         Returns:
             G (array): Irradiance on the PV panels (W/m^2) for each PV panel group
         """
+        
         LSTM = 15 *self.TUTC  # Local Standard Time Meridian
-        B = 360/365 * (day - 81) 
+        B = np.radians(360/365 * (day - 81))  
         EoT = 9.87 * np.sin(2*B) - 7.53 * np.cos(B) - 1.5 * np.sin(B)  # Equation of Time (minutes)
         TC = 4 * (self.longitude - LSTM) + EoT  # Time Correction (minutes)
         LST = hour + TC/60  # Local Solar Time (hours)
-        HRA = 15 * (LST - 12)  # Hour Angle (degrees)
-        delta = -23.45 * np.cos(360/365 * (day + 10))  # Declination Angle (degrees)
-        alpha = np.arcsin(np.sin(delta) * np.sin(self.latitude) + np.cos(delta) * np.cos(self.latitude) * np.cos(HRA))  # Solar Altitude Angle (degrees)
-        azimuth = np.arccos((np.sin(delta) * np.cos(self.latitude) - np.cos(delta) * np.sin(self.latitude) * np.cos(HRA)) / np.cos(alpha))  # Solar Azimuth Angle (degrees)
+        HRA = np.radians(15 * (LST - 12))  # Hour Angle (radian)
+        delta = np.radians(-23.45 * np.cos(2*np.pi/365 * (day + 10)))  # Declination Angle (radian)
+        alpha = np.arcsin(np.sin(delta) * np.sin(self.latitude) + np.cos(delta) * np.cos(self.latitude) * np.cos(HRA))  # Solar Altitude Angle (radian)
+        azimuth = np.arccos((np.sin(delta) * np.cos(self.latitude) - np.cos(delta) * np.sin(self.latitude) * np.cos(HRA)) / np.cos(alpha))  # Solar Azimuth Angle (radian)
         
-        G = DNI * (np.cos(alpha)*np.sin(self.PV_inclination)*np.cos(self.PV_orientation - azimuth) + np.sin(alpha) * np.cos(self.PV_inclination)) + DHI * (1 + np.cos(self.PV_inclination))/2
+        G= np.zeros(len(self.PV_inclination))
+        if HRA > 0:
+            azimuth = 2*np.pi - azimuth
+            
+        if alpha < 0:
+            for i in range(len(self.PV_inclination)):
+                G[i] = 0
+        else:   
+            G = DNI * (np.cos(alpha)*np.sin(self.PV_inclination)*np.cos(self.PV_orientation - azimuth) + np.sin(alpha) * np.cos(self.PV_inclination)) + DHI * (1 + np.cos(self.PV_inclination))/2
         
+        for i in range(len(G)):
+            if G[i] < 0:
+                G[i] = 0
         production = 0
         for i in range(len(G)):
             production += G[i] * self.PV_area[i] * self.PV_efficiency
