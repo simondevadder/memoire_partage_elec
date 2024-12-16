@@ -4,7 +4,8 @@ This file contains the agent "energy community"
 """
     
 import numpy as np
-
+import pandas as pd
+import os
 
 class EnergyCommunity:
     
@@ -31,7 +32,11 @@ class EnergyCommunity:
                
                 PV_inclination (array of float): inclination of the PV panels (degrees compared to ground), in an array if multiple groups of PV panels
                 PV_orientation (array of float): orientation of the PV panels (degrees compared to north), in an array if multiple groups of PV panels
-                PV_efficiency (float): efficiency of the PV panels (%)
+                PV_efficiency (float): efficiency of the PV panels(%)
+                PV_NOCT (float): Nominal Operating Cell Temperature at G=800W/m^2, Ta = 20°C (°C) ref = 43.6 °C, provided by the manufacturer
+                PV_betacoeff (float): Temperature coefficient (°C), positive value. ref = 0.4%/°C, provided by the manufacturer,
+                                        can be found in the datasheet under the name : temperature coefficient for P_max 
+                PV_Tref (float): reference temperature, Usually 25°C, provided by the manufacturer -> STC contidtions
                 PV_area (array of float): area of the PV panels (m^2), in an array if multiple groups of PV panels
                 
                 sharing_price (float): price of the energy shared between the consumers (€/kWh). Price considered fixed along the year
@@ -55,7 +60,10 @@ class EnergyCommunity:
         
         self.PV_inclination = np.radians(params['PV_inclination'])
         self.PV_orientation = np.radians(params['PV_orientation'])
-        self.PV_efficiency = params['PV_efficiency']
+        self.PV_efficiency = params.get('PV_efficiency', 0.18)  # ref = 18%
+        self.PV_NOCT = params.get('PV_NOCT', 43.6) # Nominal Operating Cell Temperature (°C) ref = 43.6 °C
+        self.PV_betacoeff = params.get('PV_betacoeff', 0.004)  # Temperature coefficient (°C) ref = 0.4%/°C
+        self.PV_Tref = params.get('PV_Tref', 25)  # Usually 25°C
         self.PV_area = params['PV_area']
         
         self.sharing_price = params['sharing_price']
@@ -75,13 +83,42 @@ class EnergyCommunity:
             self.common_area_volume = params['common_area_volume'] # volume of the common area (m^3)
         
     
+    def get_weather_data(self, directory_new):
+        """ This function get the weather data and put them in usable form in a new directory
+
+        Args:
+            directory_new (string): directory where the new weather data will be stored
+            
+        write :
+            dni : .csv file containing the Direct Normal Irradiance (W/m^2) for each hour for each year (8760 x n_years)
+            dhi : .csv file containing the Diffuse Horizontal Irradiance (W/m^2) for each hour for each year (8760 x n_years)
+            temperature : .csv file containing the temperature (°C) for each hour for each year (8760 x n_years)
+        """
+        dhi = np.zeros((8760, 25))
+        dni = np.zeros((8760, 25))
+        temperature = np.zeros((8760, 25))
+        
+        for year in range(1998, 2023):
+            df = pd.read_csv('weather_data_brussels/50.849062_n_4.352169_e_38.8904_-77.032_psm3-2-2_60_' + str(year)+'.csv', skiprows=2)
+            dhi[:, year-1998] = df['DHI']
+            dni[:, year-1998] = df['DNI']
+            temperature[:, year-1998] = df['Temperature']
+
+        if not os.path.exists(directory_new):
+            os.makedirs(directory_new)
+            
+        np.savetxt(directory_new + '/dni.csv', dni, delimiter=',', fmt="%.1f")
+        np.savetxt(directory_new + '/dhi.csv', dhi, delimiter=',', fmt="%.1f")
+        np.savetxt(directory_new + '/temperature.csv', temperature, delimiter=',', fmt="%.1f")
+        print('weather data saved')
     
-    def func_compute_production(self, DHI, DNI, day, hour ):
+    def func_compute_production(self, DHI, DNI, T, day, hour ):
         """ This function compute the irradiance on the PV panels at a given time step, and set the production of the community at time t
 
         Args:
             DHI (float): Diffuse Horizontal Irradiance (W/m^2), taken from the weather data
             DNI (float): Direct Normal Irradiance (W/m^2), taken from the weather data
+            T (float): Temperature (°C), taken from the weather data
             day (int): day number (jan 1 : day =1)
             hour (int): hour of the day (0 to 23)
             
@@ -109,12 +146,17 @@ class EnergyCommunity:
         else:   
             G = DNI * (np.cos(alpha)*np.sin(self.PV_inclination)*np.cos(self.PV_orientation - azimuth) + np.sin(alpha) * np.cos(self.PV_inclination)) + DHI * (1 + np.cos(self.PV_inclination))/2
         
+        # Temperature effect
+        Tcell = T + (G/800) * (self.PV_NOCT - 20)
+        efficiency = self.PV_efficiency * (1 - self.PV_betacoeff * (Tcell - self.PV_Tref))
+        
+        
         for i in range(len(G)):
             if G[i] < 0:
                 G[i] = 0
         production = 0
         for i in range(len(G)):
-            production += G[i] * self.PV_area[i] * self.PV_efficiency
+            production += G[i] * self.PV_area[i] * efficiency
         self.production = production
         
         return G
