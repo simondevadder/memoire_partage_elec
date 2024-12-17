@@ -6,6 +6,7 @@ This file contains the agent "energy community"
 import numpy as np
 import pandas as pd
 import os
+from datetime import date
 
 class EnergyCommunity:
     
@@ -97,12 +98,17 @@ class EnergyCommunity:
         dhi = np.zeros((8760, 25))
         dni = np.zeros((8760, 25))
         temperature = np.zeros((8760, 25))
+        day = np.zeros((8760, 25))
+        hour = np.zeros((8760, 25))
         
         for year in range(1998, 2023):
             df = pd.read_csv('weather_data_brussels/50.849062_n_4.352169_e_38.8904_-77.032_psm3-2-2_60_' + str(year)+'.csv', skiprows=2)
             dhi[:, year-1998] = df['DHI']
             dni[:, year-1998] = df['DNI']
             temperature[:, year-1998] = df['Temperature']
+            day_number =[date(df['Year'][i], df['Month'][i], df['Day'][i]).timetuple().tm_yday for i in range(len(df['Year']))]  #give the day number of the year
+            day[:, year-1998] = day_number
+            hour[:, year-1998] = df['Hour']
 
         if not os.path.exists(directory_new):
             os.makedirs(directory_new)
@@ -110,9 +116,12 @@ class EnergyCommunity:
         np.savetxt(directory_new + '/dni.csv', dni, delimiter=',', fmt="%.1f")
         np.savetxt(directory_new + '/dhi.csv', dhi, delimiter=',', fmt="%.1f")
         np.savetxt(directory_new + '/temperature.csv', temperature, delimiter=',', fmt="%.1f")
+        np.savetxt(directory_new + '/day.csv', day, delimiter=',', fmt="%.1f")
+        np.savetxt(directory_new + '/hour.csv', hour, delimiter=',', fmt="%.1f")
+        
         print('weather data saved')
     
-    def func_compute_production(self, DHI, DNI, T, day, hour ):
+    def func_compute_production_step(self, DHI, DNI, T, day, hour):
         """ This function compute the irradiance on the PV panels at a given time step, and set the production of the community at time t
 
         Args:
@@ -120,12 +129,13 @@ class EnergyCommunity:
             DNI (float): Direct Normal Irradiance (W/m^2), taken from the weather data
             T (float): Temperature (°C), taken from the weather data
             day (int): day number (jan 1 : day =1)
-            hour (int): hour of the day (0 to 23)
             
         Returns:
-            G (array): Irradiance on the PV panels (W/m^2) for each PV panel group
+            production (float): production of the community at time t (Wh)
+            G (array): array of the irradiance on the PV panels at time t (W/m^2)
         """
-        
+
+                
         LSTM = 15 *self.TUTC  # Local Standard Time Meridian
         B = np.radians(360/365 * (day - 81))  
         EoT = 9.87 * np.sin(2*B) - 7.53 * np.cos(B) - 1.5 * np.sin(B)  # Equation of Time (minutes)
@@ -154,14 +164,49 @@ class EnergyCommunity:
         for i in range(len(G)):
             if G[i] < 0:
                 G[i] = 0
+                
         production = 0
         for i in range(len(G)):
-            production += G[i] * self.PV_area[i] * efficiency
-        self.production = production
+            production += G[i] * self.PV_area[i] * efficiency[i]
+            
+        #self.production = production
+        #print("production = ", production)
         
-        return G
+        return production, G[0]
             
+    def func_compute_total_production(self, directory_data, directory_output, n_years):
+        """Compute the production of the community for each time step of each year and save it in a new directory using func_compute_production_step
+
+        Args:
+            directory_data (string): relative path to the directory containing the weather data, directory must contain the following files :
+                                dhi.csv : .csv file containing the Diffuse Horizontal Irradiance (W/m^2) for each hour for each year (8760 x n_years)
+                                dni.csv : .csv file containing the Direct Normal Irradiance (W/m^2) for each hour for each year (8760 x n_years)
+                                temperature.csv : .csv file containing the temperature (°C) for each hour for each year (8760 x n_years)
+                                day.csv : .csv file containing the day number of the year for each hour for each year (8760 x n_years)
+                                hour.csv : .csv file containing the hour of the day for each hour for each year (8760 x n_years)       
+            directory_output (string): relative path to the directory where the production will be saved, can be the same as directory_data
+        """
+        dhi = pd.read_csv(directory_data + '/dhi.csv', header=None)
+        print(dhi)
+        dni = pd.read_csv(directory_data + '/dni.csv', header=None)
+        temperature = pd.read_csv(directory_data + '/temperature.csv', header=None)
+        day_number = pd.read_csv(directory_data + '/day.csv', header=None)
+        hour_number = pd.read_csv(directory_data + '/hour.csv', header=None)
+        
+        production = np.zeros((8760,n_years))
+        G = np.zeros((8760,n_years))
+        for i in range(8760):
+            for j in range(25):
+                production[i][j], G[i][j] = self.func_compute_production_step(dhi.iloc[i, j], dni.iloc[i, j], temperature.iloc[i, j], day_number.iloc[i, j],hour_number.iloc[i, j])
+                
+                
+        if not os.path.exists(directory_output):
+            os.makedirs(directory_output)
             
+        np.savetxt(directory_output + '/production.csv', production, delimiter=',', fmt="%.1f")
+        np.savetxt(directory_output + '/G.csv', G, delimiter=',', fmt="%.1f")
+        
+        print('production saved')
         
         
         

@@ -11,6 +11,7 @@ from datetime import date
 import sys
 import os
 from matplotlib import pyplot as plt
+import seaborn as sns
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from energy_community import EnergyCommunity
@@ -150,7 +151,14 @@ def test_func_production(year=2020):
     a = (1 + np.cos(community.PV_inclination))/2
     print(a)
         
-        
+
+def test_func_compute_total_production():
+    community  = EnergyCommunity(params)
+    community.func_compute_total_production('test_directory', 'test_directory', 25)
+
+#test_func_compute_total_production()
+
+
 #test_func_production(year=2005)
    
 
