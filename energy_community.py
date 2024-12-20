@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 import os
 from datetime import date
+import datetime
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 class EnergyCommunity:
     
@@ -305,4 +308,91 @@ class EnergyCommunity:
         self.repartition = repartition
         self.taken_to_grid = consumption - repartition
         return self.repartition, self.taken_to_grid, self.injected_to_grid
+    
+    
+    def plot_production(self, directory_production, args, plot_day_year=False, plot_day=False, plot_production_per_year=False):
+        """ This function draws different plots of the production of the community
+
+        Args:
+            directory_production (string): relative path to the directory containing the production data, directory must contain the following file :
+                                production.csv : .csv file containing the production of the community for each time step of each year (8760 x n_years)
+            args (dictionnary): dictionnary of parameters for each plot type : 
+                                for plot_day_year :
+                                    day (int): day of the month 
+                                    month (int): month number (jan = 1)
+                                    specific_year (int): year number (optional) if one specific year is chosen, otherwise all years are plotted in boxplot
+                                for plot_day :
+                                    day (int): day of the month
+                                    month (int): month number (jan = 1)
+            plot_day_year (bool): if True, plot the production of the community on a specific date (day, month, year to be provided in args)
+            plot_day (bool): if True, plot the production of the community on a specific day as a box plot of each year (day, month to be provided in args)
+            plot_production_per_year (bool): if True, plot the total production of the community per year, in kWh
+        """
         
+        production = pd.read_csv(directory_production + '/production.csv', header=None)
+        
+        if plot_day_year:
+            try :
+                day = args['day']-1
+                month = args['month']
+                specific_year = args['specific_year']
+
+            except:
+                ValueError("Date is not correctly defined")
+            
+            specific_year = args.get('specific_year', None)
+            day_number = date(specific_year, month, day).timetuple().tm_yday
+            production_day = production.iloc[day_number*24:(day_number+1)*24, specific_year-1998]/1000
+            jan_1 = date(specific_year, 1, 1)
+            day_to_plot = jan_1 + datetime.timedelta(days=day_number)
+            
+            hours = np.arange(0,24)
+            sns.lineplot(x=hours, y=production_day)
+            plt.xlabel('Hour of the day')
+            plt.ylabel('Production (kWh)')
+            plt.title('Production of the community on ' + day_to_plot.strftime("%d/%m/%Y"))
+            plt.show()
+        if plot_day :
+            try :
+                day = args['day']-1
+                month = args['month']
+            except:
+                ValueError("Date is not correctly defined")
+
+            data = {}
+            for year in range(1998, 2023):
+                day_number = date(year, month, day).timetuple().tm_yday
+                production_day_inter = production.iloc[day_number*24:(day_number+1)*24, year-1998]/1000
+                data[year] = production_day_inter.values
+            
+            production_day = pd.DataFrame(data)
+            production_day.index = range(24)
+            jan_1 = date(1998, 1, 1)
+            day_to_plot = jan_1 + datetime.timedelta(days=day_number)
+            df_long = production_day.reset_index().melt(id_vars="index", var_name="Year", value_name="production")
+            df_long.rename(columns={"index": "Hour"}, inplace=True)
+            plt.figure(figsize=(12, 8))
+            sns.boxplot(x="Hour", y="production", data=df_long)
+            plt.title('Production of the community on ' + day_to_plot.strftime("%d/%m"))
+            plt.xlabel("Hour of the day")
+            plt.ylabel("Production (kWh)")
+            plt.show()
+            
+        if plot_production_per_year:
+            production_per_year = production.sum(axis=0)
+            years = np.arange(1998, 2023)
+            plt.plot(years, production_per_year/1000)
+            plt.ylim(0, max(production_per_year)/1000 + 10)
+            plt.title('Production of the community per year')
+            plt.xlabel('Year')
+            plt.ylabel('Production (kWh)')
+            plt.show()
+            
+        ## TODO :  moyenne par jour, pour une année ou toutes (boxplot et lineplot)
+
+    
+        
+        
+        
+        
+       
