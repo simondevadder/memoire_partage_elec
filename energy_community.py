@@ -310,7 +310,8 @@ class EnergyCommunity:
         return self.repartition, self.taken_to_grid, self.injected_to_grid
     
     
-    def plot_production(self, directory_production, args, plot_day_year=False, plot_day=False, plot_production_per_year=False):
+    def plot_production(self, directory_production, args, plot_day_year=False, plot_day=False, plot_production_per_year=False, 
+                        plot_daily_production_year=False, plot_daily_production_boxplot=False):
         """ This function draws different plots of the production of the community
 
         Args:
@@ -324,9 +325,13 @@ class EnergyCommunity:
                                 for plot_day :
                                     day (int): day of the month
                                     month (int): month number (jan = 1)
+                                for plot_daily_production_year :
+                                    specific_year (int): year number
             plot_day_year (bool): if True, plot the production of the community on a specific date (day, month, year to be provided in args)
             plot_day (bool): if True, plot the production of the community on a specific day as a box plot of each year (day, month to be provided in args)
             plot_production_per_year (bool): if True, plot the total production of the community per year, in kWh
+            plot_daily_production_year (bool): if True, plot the daily mean production of the community in a specific year (specific_year to be provided in args)
+            plot_daily_production_boxplot (bool): if True, plot the daily production of the community as a boxplot for each day of the year
         """
         
         production = pd.read_csv(directory_production + '/production.csv', header=None)
@@ -389,6 +394,59 @@ class EnergyCommunity:
             plt.show()
             
         ## TODO :  moyenne par jour, pour une année ou toutes (boxplot et lineplot)
+        
+        if plot_daily_production_year :
+            try :
+                specific_year = args['specific_year']
+            except:
+                ValueError("Year is not correctly defined")
+            
+            production_year = production.iloc[:, specific_year-1998]
+            production_per_day = np.zeros(365)
+            for i in range(365):
+                production_per_day[i] = production_year[i*24:(i+1)*24].sum()
+            
+            
+            jan_1 = date(specific_year, 1, 1)
+            datum = []
+            for i in range(365):
+                datum.append(jan_1 + datetime.timedelta(days=i))
+            
+            sns.lineplot(x=datum, y=production_per_day/1000)
+            plt.xlabel('Day of the year')
+            plt.ylabel('Production (kWh)')
+            plt.xticks(rotation=45)
+            plt.title('Daily mean production of the community in ' + str(specific_year))
+            plt.show()
+        
+        if plot_daily_production_boxplot :
+            
+            daily_production = {} 
+            for year in range(1998, 2023):
+                production_year = production.iloc[:, year-1998]
+                production_per_day = np.zeros(365)
+                for i in range(365):
+                    production_per_day[i] = production_year[i*24:(i+1)*24].sum()
+                daily_production[year] = production_per_day/1000
+            
+            daily_production_df = pd.DataFrame(daily_production)
+            daily_production_df.index = range(1,366)
+            df_long = daily_production_df.reset_index().melt(id_vars="index", var_name="Year", value_name="production")
+            df_long.rename(columns={"index": "Day"}, inplace=True)
+            
+            days_per_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]  
+            cumulative_days = np.cumsum(days_per_month)
+
+            month_ticks = [1] + list(cumulative_days[:-1] + 1)  
+            month_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            plt.figure(figsize=(12, 8))
+            sns.boxplot(x="Day",  y="production", data=df_long)
+            plt.title('Daily production of the community')
+            plt.xlabel("Month of the year")
+            plt.ylabel("Production (kWh)")
+            plt.xticks(ticks=month_ticks, labels=month_labels, rotation=45)
+            plt.show()
+            
 
     
         

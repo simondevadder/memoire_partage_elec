@@ -166,9 +166,9 @@ def test_func_plot_production():
     args={
         'day': 25,
         'month': 5,
-        #'specific_year': 1999,
+        'specific_year': 1999,
     }
     community = EnergyCommunity(params)
-    community.plot_production(directroy, args, plot_day=False, plot_production_per_year=True)
+    community.plot_production(directroy, args, plot_day=False, plot_production_per_year=False, plot_daily_production_boxplot=True)
 
 test_func_plot_production()
