@@ -190,7 +190,7 @@ class EnergyCommunity:
             directory_output (string): relative path to the directory where the production will be saved, can be the same as directory_data
         """
         dhi = pd.read_csv(directory_data + '/dhi.csv', header=None)
-        print(dhi)
+        #print(dhi)
         dni = pd.read_csv(directory_data + '/dni.csv', header=None)
         temperature = pd.read_csv(directory_data + '/temperature.csv', header=None)
         day_number = pd.read_csv(directory_data + '/day.csv', header=None)

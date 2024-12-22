@@ -21,9 +21,9 @@ from energy_community import EnergyCommunity
 params = {
         'n_households': 3,
         'key': 'fix1round',
-        'PV_inclination': [35, 35],
-        'PV_orientation': [180, 90],
-        'PV_area': [1, 0],
+        'PV_inclination': [35],
+        'PV_orientation': [180],
+        'PV_area': [1],
         'PV_efficiency': 0.15,
         'sharing_price': 0.1,
         'grid_price': 0.2,
@@ -91,9 +91,9 @@ def test_func_production(year=2020):
     params = {
         'n_households': 3,
         'key': 'fix1round',
-        'PV_inclination': [35, 35],
-        'PV_orientation': [180, 90],
-        'PV_area': [1, 0],
+        'PV_inclination': [35],
+        'PV_orientation': [180],
+        'PV_area': [1],
         'PV_efficiency': 0.15,
         'sharing_price': 0.1,
         'grid_price': 0.2,
@@ -153,8 +153,22 @@ def test_func_production(year=2020):
         
 
 def test_func_compute_total_production():
-    community  = EnergyCommunity(params)
-    community.func_compute_total_production('test_directory', 'test_directory', 25)
+    #community  = EnergyCommunity(params)
+    #community.func_compute_total_production('test_directory', 'test_directory', 25)
+    
+    community = []
+    inclination = np.linspace(0, 90, 10)
+    orientation = np.linspace(0, 360-360/10, 10)
+    for i in range(10):
+        for j in range(10):
+            params['PV_inclination'] = [inclination[i]]
+            params['PV_orientation'] = [orientation[j]]
+            community.append(EnergyCommunity(params))
+            directory = 'test_directory_incli='+str(inclination[i])+'_orient='+str(orientation[j])
+            community[-1].func_compute_total_production('test_directory', directory, 25)
+    
+    
+    
 
 #test_func_compute_total_production()
 
@@ -162,13 +176,51 @@ def test_func_compute_total_production():
 #test_func_production(year=2005)
 
 def test_func_plot_production():
-    directroy = 'test_directory'
+    
     args={
         'day': 25,
         'month': 5,
         'specific_year': 1999,
     }
     community = EnergyCommunity(params)
-    community.plot_production(directroy, args, plot_day=False, plot_production_per_year=False, plot_daily_production_boxplot=True)
+    inclination = np.linspace(0, 90, 10)
+    orientation = np.linspace(0, 360-360/10, 10)
+    for i in range(10):
+        for j in range(10):
+            params['PV_inclination'] = [inclination[i]]
+            params['PV_orientation'] = [orientation[j]]
+            directory = 'test_directory_incli='+str(inclination[i])+'_orient='+str(orientation[j])
+            community.plot_production(directory, args, plot_day=False, plot_production_per_year=False, plot_daily_production_boxplot=True)
+            print(directory)
 
-test_func_plot_production()
+
+#test_func_plot_production()
+
+def compute_total_mean_production():
+    community = EnergyCommunity(params)
+    inclination = np.linspace(0, 90, 10)
+    orientation = np.linspace(0, 360-360/10, 10)
+    mean_production = np.zeros((10, 10))
+
+    for i in range(10):
+        for j in range(10):
+            params['PV_inclination'] = [inclination[i]]
+            params['PV_orientation'] = [orientation[j]]
+            file = 'test_directory_incli='+str(inclination[i])+'_orient='+str(orientation[j]) + '/production.csv'
+            production = pd.read_csv(file)
+            yearly_sum = production.sum(axis=0)
+            print(len(yearly_sum))
+            mean_production[i, j] = yearly_sum.mean()/1000
+            
+            
+            
+    print(mean_production)
+    sns.heatmap(np.round(mean_production, 0), xticklabels=orientation, yticklabels=inclination, annot=True,fmt='.0f', cmap='viridis')
+    plt.xlabel('PV orientation [°]')
+    plt.ylabel('PV inclination [°]')
+    plt.title('Mean yearly production [kWh]')
+    plt.xticks(rotation=45)  
+    plt.yticks(rotation=90)
+    plt.gca().invert_yaxis()
+    plt.show()
+#compute_total_mean_production()
