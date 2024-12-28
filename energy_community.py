@@ -42,6 +42,10 @@ class EnergyCommunity:
                                         can be found in the datasheet under the name : temperature coefficient for P_max 
                 PV_Tref (float): reference temperature, Usually 25°C, provided by the manufacturer -> STC contidtions
                 PV_area (array of float): area of the PV panels (m^2), in an array if multiple groups of PV panels
+                PV_shaddowing (array of float): array containing the elevation and azimuth of shaddowing objects (degrees) if any, 
+                                                otherwise an empty list
+                                                e.g. : [[(elevation1, elevation2), (azimuth1, azimuth2)], ...]
+                                                        An object (building...) is shaddowing the PV panels if the sun is at an elevation between elevation1 and elevation2
                 
                 sharing_price (float): price of the energy shared between the consumers (€/kWh). Price considered fixed along the year
                 grid_price (float): price of the energy taken from the grid (€/kWh). Price considered fixed along the year (may be modified in the future)
@@ -69,6 +73,7 @@ class EnergyCommunity:
         self.PV_betacoeff = params.get('PV_betacoeff', 0.004)  # Temperature coefficient (°C) ref = 0.4%/°C
         self.PV_Tref = params.get('PV_Tref', 25)  # Usually 25°C
         self.PV_area = params['PV_area']
+        self.PV_shaddowing = params.get('PV_shaddowing', [])  # if None, return an empty list
         
         self.sharing_price = params['sharing_price']
         self.grid_price = params['grid_price']
@@ -150,15 +155,23 @@ class EnergyCommunity:
         azimuth = np.arccos((np.sin(delta) * np.cos(self.latitude) - np.cos(delta) * np.sin(self.latitude) * np.cos(HRA)) / np.cos(alpha))  # Solar Azimuth Angle (radian)
         
         G= np.zeros(len(self.PV_inclination))
+        G_dir = np.zeros(len(self.PV_inclination))
+        G_diff = np.zeros(len(self.PV_inclination))
         if HRA > 0:
             azimuth = 2*np.pi - azimuth
             
         if alpha < 0:
             for i in range(len(self.PV_inclination)):
                 G[i] = 0
-        else:   
-            G = DNI * (np.cos(alpha)*np.sin(self.PV_inclination)*np.cos(self.PV_orientation - azimuth) + np.sin(alpha) * np.cos(self.PV_inclination)) + DHI * (1 + np.cos(self.PV_inclination))/2
+        else:         
+            G_dir = DNI * (np.cos(alpha)*np.sin(self.PV_inclination)*np.cos(self.PV_orientation - azimuth) + np.sin(alpha) * np.cos(self.PV_inclination)) 
+            G_diff = DHI * (1 + np.cos(self.PV_inclination)) / 2
+            for shadow in self.PV_shaddowing:           #Shaddowing effect
+                if shadow[0][0] < np.degrees(alpha) < shadow[0][1] and shadow[1][0] < np.degrees(azimuth) < shadow[1][1]:
+                    for i in range(len(self.PV_inclination)):
+                        G_dir[i] = 0
         
+        G = G_dir + G_diff
         # Temperature effect
         Tcell = T + (G/800) * (self.PV_NOCT - 20)
         efficiency = self.PV_efficiency * (1 - self.PV_betacoeff * (Tcell - self.PV_Tref))
