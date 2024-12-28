@@ -178,23 +178,29 @@ def test_func_compute_total_production():
 def test_func_plot_production():
     
     args={
-        'day': 25,
-        'month': 5,
+        'day': 21,
+        'month': 6,
         'specific_year': 1999,
     }
     community = EnergyCommunity(params)
     inclination = np.linspace(0, 90, 10)
     orientation = np.linspace(0, 360-360/10, 10)
+    """
     for i in range(10):
         for j in range(10):
             params['PV_inclination'] = [inclination[i]]
             params['PV_orientation'] = [orientation[j]]
-            directory = 'test_directory_incli='+str(inclination[i])+'_orient='+str(orientation[j])
-            community.plot_production(directory, args, plot_day=False, plot_production_per_year=False, plot_daily_production_boxplot=True)
-            print(directory)
+            #directory = 'test_directory_incli='+str(inclination[i])+'_orient='+str(orientation[j])
+            directory = "test_directory"
+            community.plot_production(directory, args, plot_day=True, plot_production_per_year=False, plot_daily_production_boxplot=False)
+    print(directory)
+    """
+    directory = 'test_directory_incli=30.0_orient=252.0'
+    community.plot_production(directory, args, plot_day=True, plot_production_per_year=False, plot_daily_production_boxplot=False)
 
 
-#test_func_plot_production()
+
+test_func_plot_production()
 
 def compute_total_mean_production():
     community = EnergyCommunity(params)
