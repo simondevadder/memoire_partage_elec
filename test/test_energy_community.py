@@ -19,6 +19,12 @@ from energy_community import EnergyCommunity
 
 
 params = {
+        'n_years':3,
+        'directory_data': 'brussels',
+        'weather_file_name':'brussels_50.8444_4.35609_msg-iodc_60_',
+        'directory_output': 'test_directory_brussels',
+        'begin_year':2017,
+        'end_year':2019,
         'n_households': 3,
         'key': 'fix1round',
         'PV_inclination': [35],
@@ -45,29 +51,14 @@ def test_init():
 
 def test_get_weather_data():
     community = EnergyCommunity(params)
-    community.get_weather_data('test_directory')
+    community.get_weather_data()
 
 #test_get_weather_data()
      
 def test_repartition():
     keys = ["fix1round", "fixmultiround", "prorata", "hybrid"]
     for key in keys :
-        params = {
-        'n_households': 4,
-        'key': key,
-        'PV_inclination': [35, 35],
-        'PV_orientation': [180, 90],
-        'PV_area': [1, 0],
-        'PV_efficiency': 0.15,
-        'sharing_price': 0.1,
-        'grid_price': 0.2,
-        'grid_injection_price': 0.05,
-        'n_elevators': 1,
-        'elevator_consumption': 20,
-        'n_floor': 5,
-        'common_area': 10,
-        'electric_heating': False,   
-        }
+        params['key'] = key
         community = EnergyCommunity(params)
         community.consumption = np.array([3, 8, 1, 10])
 
@@ -91,9 +82,9 @@ def test_func_production(year=2020):
     params = {
         'n_households': 3,
         'key': 'fix1round',
-        'PV_inclination': [35],
-        'PV_orientation': [180],
-        'PV_area': [1],
+        'PV_inclination': [30,30],
+        'PV_orientation': [108,252],
+        'PV_area': [0.5,0.5],
         'PV_efficiency': 0.15,
         'sharing_price': 0.1,
         'grid_price': 0.2,
@@ -153,9 +144,9 @@ def test_func_production(year=2020):
         
 
 def test_func_compute_total_production():
-    #community  = EnergyCommunity(params)
-    #community.func_compute_total_production('test_directory', 'test_directory', 25)
-    
+    community  = EnergyCommunity(params)
+    community.func_compute_total_production()
+    """
     community = []
     inclination = np.linspace(0, 90, 10)
     orientation = np.linspace(0, 360-360/10, 10)
@@ -166,6 +157,7 @@ def test_func_compute_total_production():
             community.append(EnergyCommunity(params))
             directory = 'test_directory_incli='+str(inclination[i])+'_orient='+str(orientation[j])
             community[-1].func_compute_total_production('test_directory', directory, 25)
+    """
     
     
     
@@ -178,9 +170,9 @@ def test_func_compute_total_production():
 def test_func_plot_production():
     
     args={
-        'day': 21,
-        'month': 6,
-        'specific_year': 1999,
+        'day': 25,
+        'month': 5,
+        'specific_year': 2017,
     }
     community = EnergyCommunity(params)
     inclination = np.linspace(0, 90, 10)
@@ -195,12 +187,12 @@ def test_func_plot_production():
             community.plot_production(directory, args, plot_day=True, plot_production_per_year=False, plot_daily_production_boxplot=False)
     print(directory)
     """
-    directory = 'test_directory_incli=30.0_orient=252.0'
-    community.plot_production(directory, args, plot_day=True, plot_production_per_year=False, plot_daily_production_boxplot=False)
+    directory = 'test_directory_brussels_production_108_252'
+    community.plot_production( args, plot_day=False, plot_production_per_year=False, plot_daily_production_boxplot=True)
 
 
 
-test_func_plot_production()
+#test_func_plot_production()
 
 def compute_total_mean_production():
     community = EnergyCommunity(params)
@@ -212,6 +204,10 @@ def compute_total_mean_production():
         for j in range(10):
             params['PV_inclination'] = [inclination[i]]
             params['PV_orientation'] = [orientation[j]]
+            params['directory_output'] = 'test_directory_incli='+str(inclination[i])+'_orient='+str(orientation[j])
+            community = EnergyCommunity(params)
+            community.get_weather_data()
+            community.func_compute_total_production()
             file = 'test_directory_incli='+str(inclination[i])+'_orient='+str(orientation[j]) + '/production.csv'
             production = pd.read_csv(file)
             yearly_sum = production.sum(axis=0)

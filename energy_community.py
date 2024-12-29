@@ -18,6 +18,15 @@ class EnergyCommunity:
         Initialize the energy community
         Args:
             params (dictionary):  a dictionary containing the following parameters :
+                n_years (int): number of years of weather data
+                directory_data (string): relative path to the directory containing the weather data
+                weather_file_name (string): name of the weather data file without the extension, nor the year (which must be at the end of the name)
+                            e.g. : '50.849062_n_4.352169_e_38.8904_-77.032_psm3-2-2_60_'
+                directory_output (string): relative path to the directory where the production will be saved
+                begin_year (int): first year of the weather data
+                end_year (int): last year of the weather data
+                
+                
                 n_households (int): number of households in the community
                 key (string): repartition key, either fix1round, fixmultiround, prorata, hybrid
             
@@ -58,6 +67,13 @@ class EnergyCommunity:
         self.latitude = 50.85    #default = 50.85
         self.TUTC = 1 #default = 1, 2 in summer time
         
+        self.n_years = params['n_years']
+        self.directory_data = params['directory_data']
+        self.weather_file_name = params['weather_file_name']
+        self.directory_output = params['directory_output']
+        self.begin_year = params['begin_year']
+        self.end_year = params['end_year']
+        
         self.key = params['key']
         self.n_households = params['n_households']
         self.consumption = np.zeros(self.n_households)
@@ -92,7 +108,7 @@ class EnergyCommunity:
             self.common_area_volume = params['common_area_volume'] # volume of the common area (m^3)
         
     
-    def get_weather_data(self, directory_new):
+    def get_weather_data(self):
         """ This function get the weather data and put them in usable form in a new directory
 
         Args:
@@ -103,29 +119,31 @@ class EnergyCommunity:
             dhi : .csv file containing the Diffuse Horizontal Irradiance (W/m^2) for each hour for each year (8760 x n_years)
             temperature : .csv file containing the temperature (°C) for each hour for each year (8760 x n_years)
         """
-        dhi = np.zeros((8760, 25))
-        dni = np.zeros((8760, 25))
-        temperature = np.zeros((8760, 25))
-        day = np.zeros((8760, 25))
-        hour = np.zeros((8760, 25))
         
-        for year in range(1998, 2023):
-            df = pd.read_csv('weather_data_brussels/50.849062_n_4.352169_e_38.8904_-77.032_psm3-2-2_60_' + str(year)+'.csv', skiprows=2)
-            dhi[:, year-1998] = df['DHI']
-            dni[:, year-1998] = df['DNI']
-            temperature[:, year-1998] = df['Temperature']
+        dhi = np.zeros((8760, self.n_years))
+        dni = np.zeros((8760, self.n_years))
+        temperature = np.zeros((8760, self.n_years))
+        day = np.zeros((8760, self.n_years))
+        hour = np.zeros((8760, self.n_years))
+        
+        for year in range(self.begin_year, self.end_year+1):
+            df = pd.read_csv(self.directory_data +'/'+ self.weather_file_name + str(year)+'.csv', skiprows=2)
+            dhi[:, year-self.begin_year] = df['DHI']
+            dni[:, year-self.begin_year] = df['DNI']
+            temperature[:, year-self.begin_year] = df['Temperature']
             day_number =[date(df['Year'][i], df['Month'][i], df['Day'][i]).timetuple().tm_yday for i in range(len(df['Year']))]  #give the day number of the year
-            day[:, year-1998] = day_number
-            hour[:, year-1998] = df['Hour']
-
-        if not os.path.exists(directory_new):
-            os.makedirs(directory_new)
+            day[:, year-self.begin_year] = day_number
+            hour[:, year-self.begin_year] = df['Hour']
+       
+        
+        if not os.path.exists(self.directory_output):
+            os.makedirs(self.directory_output)
             
-        np.savetxt(directory_new + '/dni.csv', dni, delimiter=',', fmt="%.1f")
-        np.savetxt(directory_new + '/dhi.csv', dhi, delimiter=',', fmt="%.1f")
-        np.savetxt(directory_new + '/temperature.csv', temperature, delimiter=',', fmt="%.1f")
-        np.savetxt(directory_new + '/day.csv', day, delimiter=',', fmt="%.1f")
-        np.savetxt(directory_new + '/hour.csv', hour, delimiter=',', fmt="%.1f")
+        np.savetxt(self.directory_output + '/dni.csv', dni, delimiter=',', fmt="%.1f")
+        np.savetxt(self.directory_output + '/dhi.csv', dhi, delimiter=',', fmt="%.1f")
+        np.savetxt(self.directory_output + '/temperature.csv', temperature, delimiter=',', fmt="%.1f")
+        np.savetxt(self.directory_output + '/day.csv', day, delimiter=',', fmt="%.1f")
+        np.savetxt(self.directory_output + '/hour.csv', hour, delimiter=',', fmt="%.1f")
         
         print('weather data saved')
     
@@ -190,7 +208,7 @@ class EnergyCommunity:
         
         return production, G[0]
             
-    def func_compute_total_production(self, directory_data, directory_output, n_years):
+    def func_compute_total_production(self):
         """Compute the production of the community for each time step of each year and save it in a new directory using func_compute_production_step
 
         Args:
@@ -202,25 +220,25 @@ class EnergyCommunity:
                                 hour.csv : .csv file containing the hour of the day for each hour for each year (8760 x n_years)       
             directory_output (string): relative path to the directory where the production will be saved, can be the same as directory_data
         """
-        dhi = pd.read_csv(directory_data + '/dhi.csv', header=None)
+        dhi = pd.read_csv(self.directory_output+ '/dhi.csv', header=None)
         #print(dhi)
-        dni = pd.read_csv(directory_data + '/dni.csv', header=None)
-        temperature = pd.read_csv(directory_data + '/temperature.csv', header=None)
-        day_number = pd.read_csv(directory_data + '/day.csv', header=None)
-        hour_number = pd.read_csv(directory_data + '/hour.csv', header=None)
+        dni = pd.read_csv(self.directory_output + '/dni.csv', header=None)
+        temperature = pd.read_csv(self.directory_output + '/temperature.csv', header=None)
+        day_number = pd.read_csv(self.directory_output + '/day.csv', header=None)
+        hour_number = pd.read_csv(self.directory_output + '/hour.csv', header=None)
         
-        production = np.zeros((8760,n_years))
-        G = np.zeros((8760,n_years))
+        production = np.zeros((8760,self.n_years))
+        G = np.zeros((8760,self.n_years))
         for i in range(8760):
-            for j in range(25):
+            for j in range(self.n_years):
                 production[i][j], G[i][j] = self.func_compute_production_step(dhi.iloc[i, j], dni.iloc[i, j], temperature.iloc[i, j], day_number.iloc[i, j],hour_number.iloc[i, j])
                 
                 
-        if not os.path.exists(directory_output):
-            os.makedirs(directory_output)
+        if not os.path.exists(self.directory_output):
+            os.makedirs(self.directory_output)
             
-        np.savetxt(directory_output + '/production.csv', production, delimiter=',', fmt="%.1f")
-        np.savetxt(directory_output + '/G.csv', G, delimiter=',', fmt="%.1f")
+        np.savetxt(self.directory_output + '/production.csv', production, delimiter=',', fmt="%.1f")
+        np.savetxt(self.directory_output + '/G.csv', G, delimiter=',', fmt="%.1f")
         
         print('production saved')
         
@@ -323,7 +341,7 @@ class EnergyCommunity:
         return self.repartition, self.taken_to_grid, self.injected_to_grid
     
     
-    def plot_production(self, directory_production, args, plot_day_year=False, plot_day=False, plot_production_per_year=False, 
+    def plot_production(self,  args, plot_day_year=False, plot_day=False, plot_production_per_year=False, 
                         plot_daily_production_year=False, plot_daily_production_boxplot=False):
         """ This function draws different plots of the production of the community
 
@@ -347,7 +365,7 @@ class EnergyCommunity:
             plot_daily_production_boxplot (bool): if True, plot the daily production of the community as a boxplot for each day of the year
         """
         
-        production = pd.read_csv(directory_production + '/production.csv', header=None)
+        production = pd.read_csv(self.directory_output + '/production.csv', header=None)
         
         if plot_day_year:
             try :
@@ -360,7 +378,7 @@ class EnergyCommunity:
             
             specific_year = args.get('specific_year', None)
             day_number = date(specific_year, month, day).timetuple().tm_yday
-            production_day = production.iloc[day_number*24:(day_number+1)*24, specific_year-1998]/1000
+            production_day = production.iloc[day_number*24:(day_number+1)*24, specific_year-self.begin_year]/1000
             jan_1 = date(specific_year, 1, 1)
             day_to_plot = jan_1 + datetime.timedelta(days=day_number)
             
@@ -378,19 +396,23 @@ class EnergyCommunity:
                 ValueError("Date is not correctly defined")
 
             data = {}
-            for year in range(1998, 2023):
+            
+            for year in range(self.begin_year,self.end_year+1):
                 day_number = date(year, month, day).timetuple().tm_yday
-                production_day_inter = production.iloc[day_number*24:(day_number+1)*24, year-1998]/1000
+                production_day_inter = production.iloc[day_number*24:(day_number+1)*24, year-self.begin_year]/1000
                 data[year] = production_day_inter.values
             
             production_day = pd.DataFrame(data)
             production_day.index = range(24)
-            jan_1 = date(1998, 1, 1)
+            jan_1 = date(self.begin_year, 1, 1)
             day_to_plot = jan_1 + datetime.timedelta(days=day_number)
             df_long = production_day.reset_index().melt(id_vars="index", var_name="Year", value_name="production")
             df_long.rename(columns={"index": "Hour"}, inplace=True)
             plt.figure(figsize=(12, 8))
-            sns.boxplot(x="Hour", y="production", data=df_long)
+            if self.n_years > 5:
+                sns.boxplot(x="Hour", y="production", data=df_long)
+            else:
+                sns.pointplot(x="Hour", y="production", data=df_long, hue="Year")
             plt.title('Production of the community on ' + day_to_plot.strftime("%d/%m"))
             plt.xlabel("Hour of the day")
             plt.ylabel("Production (kWh)")
@@ -398,7 +420,7 @@ class EnergyCommunity:
             
         if plot_production_per_year:
             production_per_year = production.sum(axis=0)
-            years = np.arange(1998, 2023)
+            years = np.arange(self.begin_year,self.end_year+1)
             plt.plot(years, production_per_year/1000)
             plt.ylim(0, max(production_per_year)/1000 + 10)
             plt.title('Production of the community per year')
@@ -406,7 +428,6 @@ class EnergyCommunity:
             plt.ylabel('Production (kWh)')
             plt.show()
             
-        ## TODO :  moyenne par jour, pour une année ou toutes (boxplot et lineplot)
         
         if plot_daily_production_year :
             try :
@@ -414,7 +435,7 @@ class EnergyCommunity:
             except:
                 ValueError("Year is not correctly defined")
             
-            production_year = production.iloc[:, specific_year-1998]
+            production_year = production.iloc[:, specific_year-self.begin_year]
             production_per_day = np.zeros(365)
             for i in range(365):
                 production_per_day[i] = production_year[i*24:(i+1)*24].sum()
@@ -435,8 +456,9 @@ class EnergyCommunity:
         if plot_daily_production_boxplot :
             
             daily_production = {} 
-            for year in range(1998, 2023):
-                production_year = production.iloc[:, year-1998]
+            
+            for year in range(self.begin_year,self.end_year+1):
+                production_year = production.iloc[:, year-self.begin_year]
                 production_per_day = np.zeros(365)
                 for i in range(365):
                     production_per_day[i] = production_year[i*24:(i+1)*24].sum()
@@ -453,7 +475,9 @@ class EnergyCommunity:
             month_ticks = [1] + list(cumulative_days[:-1] + 1)  
             month_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
             plt.figure(figsize=(12, 8))
+            
             sns.boxplot(x="Day",  y="production", data=df_long)
+            
             plt.title('Daily production of the community')
             plt.xlabel("Month of the year")
             plt.ylabel("Production (kWh)")
