@@ -22,12 +22,12 @@ params = {
         'n_years':3,
         'directory_data': 'brussels',
         'weather_file_name':'brussels_50.8444_4.35609_msg-iodc_60_',
-        'directory_output': 'test_directory_brussels',
+        'directory_output': 'test_directory_brussels_00',
         'begin_year':2017,
         'end_year':2019,
         'n_households': 3,
         'key': 'fix1round',
-        'PV_inclination': [35],
+        'PV_inclination': [0],
         'PV_orientation': [180],
         'PV_area': [1],
         'PV_efficiency': 0.15,
@@ -53,7 +53,7 @@ def test_get_weather_data():
     community = EnergyCommunity(params)
     community.get_weather_data()
 
-#test_get_weather_data()
+test_get_weather_data()
      
 def test_repartition():
     keys = ["fix1round", "fixmultiround", "prorata", "hybrid"]
@@ -162,7 +162,7 @@ def test_func_compute_total_production():
     
     
 
-#test_func_compute_total_production()
+test_func_compute_total_production()
 
 
 #test_func_production(year=2005)
@@ -187,12 +187,15 @@ def test_func_plot_production():
             community.plot_production(directory, args, plot_day=True, plot_production_per_year=False, plot_daily_production_boxplot=False)
     print(directory)
     """
-    directory = 'test_directory_brussels_production_108_252'
-    community.plot_production( args, plot_day=False, plot_production_per_year=False, plot_daily_production_boxplot=True)
+    community.plot_production( args, plot_day=True, plot_production_per_year=False, plot_daily_production_boxplot=True)
+    file = 'test_directory_brussels_00/production.csv'
+    production = pd.read_csv(file)
+    yearly_sum = production.sum(axis=0)
+    print(yearly_sum)
 
 
 
-#test_func_plot_production()
+test_func_plot_production()
 
 def compute_total_mean_production():
     community = EnergyCommunity(params)

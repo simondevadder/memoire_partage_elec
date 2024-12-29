@@ -109,15 +109,14 @@ class EnergyCommunity:
         
     
     def get_weather_data(self):
-        """ This function get the weather data and put them in usable form in a new directory
+        """ This function get the weather data and put them in usable form in self.directory_output
 
-        Args:
-            directory_new (string): directory where the new weather data will be stored
-            
         write :
             dni : .csv file containing the Direct Normal Irradiance (W/m^2) for each hour for each year (8760 x n_years)
             dhi : .csv file containing the Diffuse Horizontal Irradiance (W/m^2) for each hour for each year (8760 x n_years)
             temperature : .csv file containing the temperature (°C) for each hour for each year (8760 x n_years)
+            day : .csv file containing the day number of the year for each hour for each year (8760 x n_years)
+            hour : .csv file containing the hour of the day for each hour for each year (8760 x n_years)
         """
         
         dhi = np.zeros((8760, self.n_years))
@@ -211,14 +210,20 @@ class EnergyCommunity:
     def func_compute_total_production(self):
         """Compute the production of the community for each time step of each year and save it in a new directory using func_compute_production_step
 
-        Args:
-            directory_data (string): relative path to the directory containing the weather data, directory must contain the following files :
+        This function uses the data stored in self.directory_output, this directory must contain the following files :
                                 dhi.csv : .csv file containing the Diffuse Horizontal Irradiance (W/m^2) for each hour for each year (8760 x n_years)
                                 dni.csv : .csv file containing the Direct Normal Irradiance (W/m^2) for each hour for each year (8760 x n_years)
                                 temperature.csv : .csv file containing the temperature (°C) for each hour for each year (8760 x n_years)
                                 day.csv : .csv file containing the day number of the year for each hour for each year (8760 x n_years)
                                 hour.csv : .csv file containing the hour of the day for each hour for each year (8760 x n_years)       
-            directory_output (string): relative path to the directory where the production will be saved, can be the same as directory_data
+                                
+            Those file can be created using the function get_weather_data
+            
+        Write : 
+        
+        This function creates the following files in the directory self.directory_output :
+            production.csv : .csv file containing the production of the community for each time step of each year (8760 x n_years)
+            G.csv : .csv file containing the irradiance on the PV panels for each time step of each year (8760 x n_years)
         """
         dhi = pd.read_csv(self.directory_output+ '/dhi.csv', header=None)
         #print(dhi)
@@ -346,7 +351,7 @@ class EnergyCommunity:
         """ This function draws different plots of the production of the community
 
         Args:
-            directory_production (string): relative path to the directory containing the production data, directory must contain the following file :
+            This file uses the production data stored in self.directory_output, this directory must contain the following file :
                                 production.csv : .csv file containing the production of the community for each time step of each year (8760 x n_years)
             args (dictionnary): dictionnary of parameters for each plot type : 
                                 for plot_day_year :
