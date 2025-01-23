@@ -27,8 +27,9 @@ params = {
         'end_year':2019,
         'n_households': 3,
         'key': 'fix1round',
-        'PV_inclination': [0],
+        'PV_inclination': [20],
         'PV_orientation': [180],
+        'PV_module_size':[1.99, 0.991, 0.075],
         'PV_area': [1],
         'PV_efficiency': 0.15,
         'sharing_price': 0.1,
@@ -53,7 +54,7 @@ def test_get_weather_data():
     community = EnergyCommunity(params)
     community.get_weather_data()
 
-test_get_weather_data()
+#test_get_weather_data()
      
 def test_repartition():
     keys = ["fix1round", "fixmultiround", "prorata", "hybrid"]
@@ -162,7 +163,7 @@ def test_func_compute_total_production():
     
     
 
-test_func_compute_total_production()
+#test_func_compute_total_production()
 
 
 #test_func_production(year=2005)
@@ -195,7 +196,7 @@ def test_func_plot_production():
 
 
 
-test_func_plot_production()
+#test_func_plot_production()
 
 def compute_total_mean_production():
     community = EnergyCommunity(params)
@@ -229,3 +230,28 @@ def compute_total_mean_production():
     plt.gca().invert_yaxis()
     plt.show()
 #compute_total_mean_production()
+
+
+def test_shadowing():
+    community = EnergyCommunity(params)
+    a = community.func_compute_shadowing(10, 180, 0.10, 180, 0.5, 5, 1.87)
+    print(a)
+    
+#test_shadowing()
+
+def test_shadowing_impact():
+    params_2 = params
+    params_2['PV_shaddowing'] = [[[2, 0.68, 180, 1.41]]]
+    params_2['PV_area'] = [272.15]
+    params_2['directory_output'] = 'test_dir_sud_shadow'
+    community = EnergyCommunity(params_2)
+    community.get_weather_data()
+    community.func_compute_total_production()
+    args={
+        'day': 25,
+        'month': 5,
+        'specific_year': 2017,
+    }
+    community.plot_production( args, plot_day=True, plot_production_per_year=False, plot_daily_production_boxplot=False)
+    
+test_shadowing_impact()

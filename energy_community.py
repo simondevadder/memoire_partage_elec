@@ -45,16 +45,19 @@ class EnergyCommunity:
                
                 PV_inclination (array of float): inclination of the PV panels (degrees compared to ground), in an array if multiple groups of PV panels
                 PV_orientation (array of float): orientation of the PV panels (degrees compared to north), in an array if multiple groups of PV panels
+                PV_module_size (array of float): the lenght, width, and depth of PV module
                 PV_efficiency (float): efficiency of the PV panels(%)
                 PV_NOCT (float): Nominal Operating Cell Temperature at G=800W/m^2, Ta = 20°C (°C) ref = 43.6 °C, provided by the manufacturer
                 PV_betacoeff (float): Temperature coefficient (°C), positive value. ref = 0.4%/°C, provided by the manufacturer,
                                         can be found in the datasheet under the name : temperature coefficient for P_max 
                 PV_Tref (float): reference temperature, Usually 25°C, provided by the manufacturer -> STC contidtions
                 PV_area (array of float): area of the PV panels (m^2), in an array if multiple groups of PV panels
-                PV_shaddowing (array of float): array containing the elevation and azimuth of shaddowing objects (degrees) if any, 
-                                                otherwise an empty list
-                                                e.g. : [[(elevation1, elevation2), (azimuth1, azimuth2)], ...]
-                                                        An object (building...) is shaddowing the PV panels if the sun is at an elevation between elevation1 and elevation2
+                PV_shaddowing (3D array of float): array containing the information for any shadowing object,
+                                                    for each PV array, for each shadowing object, the array contains :
+                                                            [distance between array and object, object hight, azimuth angle of object, span angle of object]
+                                                            span angle means the angle between the center and the edge of the object, as seen by the PV array
+                                                    [[[info for obj 1, PV1][info for obj 2, PV 1]][[info for obj 1, PV2][info for obj 2 PV2]]]
+                
                 
                 sharing_price (float): price of the energy shared between the consumers (€/kWh). Price considered fixed along the year
                 grid_price (float): price of the energy taken from the grid (€/kWh). Price considered fixed along the year (may be modified in the future)
@@ -84,6 +87,7 @@ class EnergyCommunity:
         
         self.PV_inclination = np.radians(params['PV_inclination'])
         self.PV_orientation = np.radians(params['PV_orientation'])
+        self.PV_module_size = params['PV_module_size']
         self.PV_efficiency = params.get('PV_efficiency', 0.18)  # ref = 18%
         self.PV_NOCT = params.get('PV_NOCT', 43.6) # Nominal Operating Cell Temperature (°C) ref = 43.6 °C
         self.PV_betacoeff = params.get('PV_betacoeff', 0.004)  # Temperature coefficient (°C) ref = 0.4%/°C
@@ -146,6 +150,46 @@ class EnergyCommunity:
         
         print('weather data saved')
     
+    
+    def func_compute_shadowing(self, x, azimuth, elevation, angle_shadow, span_angle, shadow_hight, PV_ground_length ):
+        """This function computes the shadowing coefficient of an array of PV panels 
+
+        Args:
+            x (float): length between the array of PV panels and the shadowing object (m)
+            azimuth (float): azimuth of the sun (radian)
+            elevation (float): elevation of the sun (radian)
+            angle_shadow (float): azimuth angle where the shadowing object is located (radian)
+            span_angle (float) : span angle of the object as seen by the PV array
+            shadow_hight (float): hight of the shadowing object (m)
+            PV_ground_length (float): length of the PV panels rapported on the ground, this can be computed with the length of the PV 
+                                        and the inclination of the PV panels : PV_ground_length = PV_length * cos(inclination) (m)
+                                        
+        Returns:
+            shadowing_coefficient (float): shadowing coefficient of the array of PV panels, between 0 and 1, the proportion of the PV panels that are shadowed
+        """
+        
+        shadowing_coefficient = 0
+        if (angle_shadow - span_angle) < azimuth < (angle_shadow + span_angle):
+            #computation of real lentgh between obstacle and PV panels
+            x_real = x / np.cos(np.abs(angle_shadow - azimuth))
+            
+            #computation of elevation angle for which the shadowing coefficient is 1 and 0
+            
+            alpha = np.arctan(shadow_hight / x_real)
+            beta = np.arctan(shadow_hight / (x_real + PV_ground_length))
+            
+            #computation of the shadowing coefficient
+            
+            if alpha < np.pi/2 and beta < np.pi/2:
+                if elevation < alpha:
+                     if elevation < beta:
+                         shadowing_coefficient = 1
+                     else:
+                         shadowing_coefficient = elevation / (beta - alpha) + alpha / (alpha - beta)
+        return shadowing_coefficient
+            
+        
+        
     def func_compute_production_step(self, DHI, DNI, T, day, hour):
         """ This function compute the irradiance on the PV panels at a given time step, and set the production of the community at time t
 
@@ -183,10 +227,17 @@ class EnergyCommunity:
         else:         
             G_dir = DNI * (np.cos(alpha)*np.sin(self.PV_inclination)*np.cos(self.PV_orientation - azimuth) + np.sin(alpha) * np.cos(self.PV_inclination)) 
             G_diff = DHI * (1 + np.cos(self.PV_inclination)) / 2
-            for shadow in self.PV_shaddowing:           #Shaddowing effect
-                if shadow[0][0] < np.degrees(alpha) < shadow[0][1] and shadow[1][0] < np.degrees(azimuth) < shadow[1][1]:
-                    for i in range(len(self.PV_inclination)):
-                        G_dir[i] = 0
+            
+            
+            for i in range(len(self.PV_shaddowing)):
+                shadow_coeff = 0
+                for j in range(len(self.PV_shaddowing[i])):
+                    PV_ground_length = self.PV_module_size[0] * np.cos(np.radians(self.PV_inclination))
+                    sc = self.func_compute_shadowing(self.PV_shaddowing[i][j][0], azimuth, alpha, self.PV_shaddowing[i][j][2], self.PV_shaddowing[i][j][3], self.PV_shaddowing[i][j][0], PV_ground_length )
+                    if sc > shadow_coeff : 
+                        shadow_coeff = sc
+                        
+                    G_dir[i]*=(1-shadow_coeff)
         
         G = G_dir + G_diff
         # Temperature effect
