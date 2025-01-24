@@ -241,21 +241,21 @@ def test_shadowing():
 
 def test_shadowing_impact():
     params_2 = params
-    params_2['PV_shaddowing'] = [[[2, 0.68, np.pi/2, 1.41]],[[2, 0.68, 3*np.pi/2, 1.41]]]
-    params_2['PV_inclination'] = [20,20]
-    params_2['PV_orientation'] = [90,270]
-    params_2['PV_area'] = [272.15,272.15]
+    params_2['PV_shaddowing'] = [[[0.31, 0.68, np.pi, 1.41]]]
+    params_2['PV_inclination'] = [20]
+    params_2['PV_orientation'] = [180]
+    params_2['PV_area'] = [498.9]
     params_2['directory_output'] = 'test_dir_sud_shadow_dosados'
     community = EnergyCommunity(params_2)
-    community.get_weather_data()
-    community.func_compute_total_production()
+    #community.get_weather_data()
+    #community.func_compute_total_production()
     args={
-        'day': 25,
-        'month': 5,
+        'day': 20,
+        'month': 6,
         'specific_year': 2017,
     }
-    community.plot_production( args, plot_day=False, plot_production_per_year=False, plot_daily_production_boxplot=False)
-    production = pd.read_csv('test_dir_sud_shadow_dosados/production.csv')
+    community.plot_production( args, plot_day=True, plot_production_per_year=False, plot_daily_production_boxplot=False)
+    production = pd.read_csv('test_dir_sud_shadow_11r/production.csv')
     yearly_sum = production.sum(axis=0)
     print(len(yearly_sum))
     mean_production = yearly_sum.mean()/1000
