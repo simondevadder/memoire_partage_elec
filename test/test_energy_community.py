@@ -234,16 +234,18 @@ def compute_total_mean_production():
 
 def test_shadowing():
     community = EnergyCommunity(params)
-    a = community.func_compute_shadowing(10, 180, 0.10, 180, 0.5, 5, 1.87)
+    a = community.func_compute_shadowing(0.13, 2.35, 1.32, np.pi, 1.41, 0.13, 1.87, 0.68)
     print(a)
     
 #test_shadowing()
 
 def test_shadowing_impact():
     params_2 = params
-    params_2['PV_shaddowing'] = [[[2, 0.68, 180, 1.41]]]
-    params_2['PV_area'] = [272.15]
-    params_2['directory_output'] = 'test_dir_sud_shadow'
+    params_2['PV_shaddowing'] = [[[2, 0.68, np.pi/2, 1.41]],[[2, 0.68, 3*np.pi/2, 1.41]]]
+    params_2['PV_inclination'] = [20,20]
+    params_2['PV_orientation'] = [90,270]
+    params_2['PV_area'] = [272.15,272.15]
+    params_2['directory_output'] = 'test_dir_sud_shadow_dosados'
     community = EnergyCommunity(params_2)
     community.get_weather_data()
     community.func_compute_total_production()
@@ -252,6 +254,12 @@ def test_shadowing_impact():
         'month': 5,
         'specific_year': 2017,
     }
-    community.plot_production( args, plot_day=True, plot_production_per_year=False, plot_daily_production_boxplot=False)
+    community.plot_production( args, plot_day=False, plot_production_per_year=False, plot_daily_production_boxplot=False)
+    production = pd.read_csv('test_dir_sud_shadow_dosados/production.csv')
+    yearly_sum = production.sum(axis=0)
+    print(len(yearly_sum))
+    mean_production = yearly_sum.mean()/1000
+    print(mean_production)
+    
     
 test_shadowing_impact()

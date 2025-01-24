@@ -151,7 +151,7 @@ class EnergyCommunity:
         print('weather data saved')
     
     
-    def func_compute_shadowing(self, x, azimuth, elevation, angle_shadow, span_angle, shadow_hight, PV_ground_length ):
+    def func_compute_shadowing(self, x, azimuth, elevation, angle_shadow, span_angle, shadow_hight, PV_ground_length, PV_hight ):
         """This function computes the shadowing coefficient of an array of PV panels 
 
         Args:
@@ -163,20 +163,32 @@ class EnergyCommunity:
             shadow_hight (float): hight of the shadowing object (m)
             PV_ground_length (float): length of the PV panels rapported on the ground, this can be computed with the length of the PV 
                                         and the inclination of the PV panels : PV_ground_length = PV_length * cos(inclination) (m)
+            PV_hight (float): hight of the PV panels (m), this can be computed with the length of the PV and the inclination of the PV panels :
+                                PV_hight = PV_length * sin(inclination) (m)
                                         
         Returns:
             shadowing_coefficient (float): shadowing coefficient of the array of PV panels, between 0 and 1, the proportion of the PV panels that are shadowed
+            dhi_shadow_coeff (float): proportion of the sky that is hidden by the shadowing object, between 0 and 1, will be used to reduce the DHI
         """
-        
         shadowing_coefficient = 0
+        dhi_shadow_coeff = 0
+        alpha_dhi = np.arctan(shadow_hight / x) # for diffuse irradiance, we are interested on computing the portion of the sky that is hidden by the object
+        beta_dhi = np.arctan((shadow_hight - PV_hight) / (x + PV_ground_length))
+        if beta_dhi > 0 :
+                
+            dhi_shadow_coeff = (alpha_dhi/np.pi + beta_dhi/np.pi)/2
+        else:
+            dhi_shadow_coeff = alpha_dhi/np.pi
+            
+            
         if (angle_shadow - span_angle) < azimuth < (angle_shadow + span_angle):
             #computation of real lentgh between obstacle and PV panels
             x_real = x / np.cos(np.abs(angle_shadow - azimuth))
             
-            #computation of elevation angle for which the shadowing coefficient is 1 and 0
+            #computation of elevation angle for which the shadowing coefficient is 0 (for alpha) and 1 (for beta)
             
             alpha = np.arctan(shadow_hight / x_real)
-            beta = np.arctan(shadow_hight / (x_real + PV_ground_length))
+            beta = np.arctan((shadow_hight - PV_hight) / (x_real + PV_ground_length))
             
             #computation of the shadowing coefficient
             
@@ -186,7 +198,7 @@ class EnergyCommunity:
                          shadowing_coefficient = 1
                      else:
                          shadowing_coefficient = elevation / (beta - alpha) + alpha / (alpha - beta)
-        return shadowing_coefficient
+        return shadowing_coefficient, dhi_shadow_coeff
             
         
         
@@ -231,13 +243,17 @@ class EnergyCommunity:
             
             for i in range(len(self.PV_shaddowing)):
                 shadow_coeff = 0
+                dhi_coeff = 0
                 for j in range(len(self.PV_shaddowing[i])):
-                    PV_ground_length = self.PV_module_size[0] * np.cos(np.radians(self.PV_inclination))
-                    sc = self.func_compute_shadowing(self.PV_shaddowing[i][j][0], azimuth, alpha, self.PV_shaddowing[i][j][2], self.PV_shaddowing[i][j][3], self.PV_shaddowing[i][j][0], PV_ground_length )
-                    if sc > shadow_coeff : 
-                        shadow_coeff = sc
-                        
+                    PV_ground_length = self.PV_module_size[0] * np.cos(self.PV_inclination[i])
+                    PV_hight = self.PV_module_size[0] * np.sin(self.PV_inclination[i])
+                    sc = self.func_compute_shadowing(self.PV_shaddowing[i][j][0], azimuth, alpha, self.PV_shaddowing[i][j][2], self.PV_shaddowing[i][j][3], self.PV_shaddowing[i][j][1], PV_ground_length, PV_hight)
+                    if sc[0] > shadow_coeff : 
+                        shadow_coeff = sc[0]
+                    if sc[1] > dhi_coeff:
+                        dhi_coeff = sc[1]
                     G_dir[i]*=(1-shadow_coeff)
+                    G_diff[i]-=dhi_coeff*DHI   # dhi_coeff is the proportion of the sky that is hidden, so the DHI is reduced by this proportion 
         
         G = G_dir + G_diff
         # Temperature effect
