@@ -43,4 +43,30 @@ def test_cooking_this_day():
     print(total/1000)
         
     
-test_cooking_this_day()
+#test_cooking_this_day()
+
+def test_electric_water_heater():
+    params['wh_capacity'] = 'medium'
+    params['wh_type'] = 'thermodynamic'
+    params['wh_night'] = False
+    household = Household(params)
+    for i in range(365):
+        household.electric_water_heater()
+        household.day +=1
+    
+    plt.plot(household.consumption[0:192])
+    plt.show()
+    
+    per_15min = np.zeros(96)
+    for i in range(365):
+        per_15min += household.consumption[96*i:96*(i+1)]
+    per_15min = per_15min/365
+    plt.plot(per_15min)
+    plt.show()
+    
+    total = 0
+    for i in range(len(household.consumption)):
+        total += household.consumption[i]/4
+    print(total/1000)
+test_electric_water_heater()
+        

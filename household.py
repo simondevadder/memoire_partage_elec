@@ -33,6 +33,9 @@ class Household:
             params (dictionary): a dictionary containing the parameters of the household, must contain the following
                 - input_directory (str): the directory where the input data is stored
                 - output_directory (str): the directory where the output data will be stored
+                - wh_type (str): the type of water heater, can be 'Joules', 'thermodynamic' or 'non-electric'
+                - wh_night (bool): True if the water heater is only used at night, False otherwise (the water heater is used during the day)
+                - wh_capacity (str): the capacity of the water heater 'low' for <149l, 'medium' for 150<=c<201l, 'high' for >201l, -1 if the capacity is unknown
                 
         Other parameters are set to default values, and can be changed later on
             time (int): the number of time step since the beginning of the simulation, the time step is 15 minutes
@@ -57,82 +60,30 @@ class Household:
         self.day = 1
         self.consumption = np.zeros((35040))  # To be changed, 35 040 is the number of time step in a year, 1 is the number of columns
         self.cooking = np.zeros((35040))
+        self.wh = np.zeros((35040))
         print(self.consumption.shape)
         #self.normalized_load = pd.read_pickle(self.input_directory + '/Graph_CC_An2_V1_normalized.pkl')
-        print("ou_chef")
         
         self.is_cooking = False
         self.time_cooking = 0
         self.time_not_cooking = 0
         
-    #Not used  
-    def get_load_curve(self):
-        """ get the normalized load profile of the mean load for 100 households for a given season and appliance
-
-        Returns:
-            _type_: _description_
-        """
-        load_profile = self.df.loc[self.season + ' - ' + self.applyance]
-        return load_profile
-    #Not used
-    def get_probability(self, t_start, t_end):
-        """ Compute the probability of starting the appliance at a given time using the load curve of the appliance (ADEME data)
-
-            The computation is done as follow :
-                - The normalized load curve gives us the probability of having the appliance on at each time of the day
-                
-        """
-        
-        t_start_arr_down = np.floor(t_start).astype(int)
-        t_start_arr_up = np.ceil(t_start).astype(int)
-        if t_start_arr_up == 24:
-            t_start_arr_up = 0
-        t_start_rest = t_start - t_start_arr_down
-        
-        t_end_arr_down = np.floor(t_end).astype(int)
-        t_end_arr_up = np.ceil(t_end).astype(int)
-        if t_end_arr_up == 24:
-            t_end_arr_up = 0
-        t_end_rest = t_end - t_end_arr_down
-                
-        if t_end>= 24:
-            t_end = t_end - 24
-            t_end_arr_down = np.floor(t_end).astype(int)
-            t_end_arr_up = np.ceil(t_end).astype(int)
-            t_end_rest = t_end - t_end_arr_down
-            
-            probability = 0
-            if t_start_arr_up == 0:
-                probability = self.load_profile[0:t_end_arr_down].sum()
+        self.wh_type = params.get('wh_type', 'Joules')
+        self.wh_is_electric = True
+        if self.wh_type == 'non-electric':
+            self.wh_is_electric = False
+        self.wh_night = params.get('wh_night', True)
+        self.wh_capacity = params.get('wh_capacity', -1)
+        if self.wh_capacity == -1:
+            r = np.random.rand()
+            if r < 0.47:
+                self.wh_capacity = 'medium'
+            elif r < 0.85:
+                self.wh_capacity = 'high'
             else:
-                probability = self.load_profile[t_start_arr_up:23].sum()  ## pas bon si t start up = 24 -> 0 
-                probability = probability + self.load_profile[0:t_end_arr_down].sum()
+                self.wh_capacity = 'low'
             
-            before = self.load_profile.iloc[t_start_arr_down] * t_start_rest + self.load_profile.iloc[t_start_arr_up] * (1 - t_start_rest)
-            after = self.load_profile.iloc[t_end_arr_down] * t_end_rest + self.load_profile.iloc[t_end_arr_up] * (1 - t_end_rest)
-            probability = probability + before + after
-        else :
-            
-            probability = self.load_profile[t_start_arr_up:t_end_arr_down].sum()
-            
-            before = self.load_profile.iloc[t_start_arr_down] * t_start_rest + self.load_profile.iloc[t_start_arr_up] * (1 - t_start_rest)
-            after = self.load_profile.iloc[t_end_arr_down] * t_end_rest + self.load_profile.iloc[t_end_arr_up] * (1 - t_end_rest)
-            probability = probability + before + after
         
-        #print(load_profile)
-        #print(probability)
-        return probability
-    #Not used 
-    def get_probability_matrix(self):
-        """ This function returns, for each duration possible of the appliance, the probability of each starting time
-        
-            The probability is computed as follow : 
-                - for each duration, we compute the probability of each starting time using the get_probability function
-                - we normalize the probability vector
-
-            Returns : 
-                - a matrix of size (t_max - t_min) * 4 x 24 * 4 (we work on a 15 min resolution)
-        """
 
     def create_normalized_load_profile_file(self, kind):
         """This function creates a file with the normalized load profile of each activity, using the ademe load profile
@@ -162,52 +113,10 @@ class Household:
         elif kind == "excel":
             df_normalized.to_excel(self.output_directory + '/Graph_CC_An2_V1_normalized.xlsx')
             print("Normalized load profile saved in " + self.output_directory + '/Graph_CC_An2_V1_normalized.xlsx')
-        
-    def cooking_is_on(self):
-        """
-        This function returns True if the cooking is on, False otherwise
-        
-        This function chooses whether the activity "cooking" is carried out or not, based on the probability curve, the past state
-        (time since last time cooking, or time since the activity began), and the current time
-        
-        if True, the function adds the consumption into the consumption matrix, sets the boolean is_cooking to True, and add 1 to the time cooking
-                if is_cooking was False before, reset the time not_cooking to 0
-        
-        if False, the function adds 0 to the consumption matrix, sets the boolean is_cooking to False, and add 1 to the time not_cooking
-                if is_cooking was True before, reset the time cooking to 0
-        """
-        probability = self.normalized_load.loc['Cuisson']
-        
-        new_state = None
-        if self.is_cooking:
-            if self.time_cooking <=2: # in this simulation, you can't cook for less than 30min
-                new_state = True
-            elif self.time_cooking > 16:  # in this simulation, you can't cook for more than 4 hours
-                new_state = False
-            else: 
-                if np.random.rand() < 0.0714: # linear probability of stopping cooking between 2 and 16
-                    new_state = False
-                else:
-                    new_state = True        
-        else:
-            if self.time_not_cooking <=2: #Once you've cooked, you can't cook again for 30min
-                new_state = False
-            else :
-                random = np.random.rand()
-                if random < probability[np.round(self.hour)]: # à verifier l'architecture de probability
-                    new_state = True
-                else:
-                    new_state = False
-        
-        if new_state:
-            pass
-            
-        
-        # TODO : add the consumption to the consumption matrix, and change the time cooking or not cooking
-        
+              
     
     def cooking_this_day(self):
-        """Second method to compute the cooking activity
+        """Second method to compute the cooking activity  300kWh/year
         
         In this function, we use the probability of having a meal at midday or in the evening
         This function has to run once per day, and will compute the consumption for the cooking post for the day
@@ -270,6 +179,39 @@ class Household:
             self.consumption[supper_index_begin:supper_index_end] += supper_power
             self.cooking[supper_index_begin:supper_index_end] += supper_power
             
-
-
+    def electric_water_heater(self):
+        """This function computes the electric water heater consumption  1582kwh/year si EWH (between 200 and 4200)
+        consumption between 21h and 5h
+        The electric water heater is used every day, 
+        
+        """
+        
+        if self.wh_is_electric : 
+            if self.wh_night : 
+                wh_beginning_hour = np.random.randint(0, 33)
+                if wh_beginning_hour > 21:
+                    wh_beginning_hour = 21*4+(wh_beginning_hour-21)
+            else :
+                wh_beginning_hour = np.random.randint(32,64)
+            
+            wh_duration = np.random.randint(6, 11) # entre 1h30 et 2h30
+            if self.wh_type == 'Joules':
+                if self.wh_capacity == 'low':
+                    wh_power = 1200
+                elif self.wh_capacity == 'medium':
+                    wh_power = 2200
+                elif self.wh_capacity == 'high':
+                    wh_power = 3000 
+            elif self.wh_type == 'thermodynamic':         
+                wh_power = 1000
+            
+            if self.day < 135 or self.day > 304 : 
+                wh_duration  = int(wh_duration * 1.3)
+            else :
+                wh_duration  = int(wh_duration * 0.65)
+                
+            wh_index_begin = (self.day - 1) * 24 * 4 + wh_beginning_hour
+            wh_index_end = wh_index_begin + wh_duration
+            self.consumption[wh_index_begin:wh_index_end] += wh_power
+            self.wh[wh_index_begin:wh_index_end] += wh_power
             
