@@ -36,6 +36,13 @@ class Household:
                 - wh_type (str): the type of water heater, can be 'Joules', 'thermodynamic' or 'non-electric'
                 - wh_night (bool): True if the water heater is only used at night, False otherwise (the water heater is used during the day)
                 - wh_capacity (str): the capacity of the water heater 'low' for <149l, 'medium' for 150<=c<201l, 'high' for >201l, -1 if the capacity is unknown
+                - heating_type (str): the type of heating, can be 'non-electric', 'only-electric', 'mixed' : 
+                                        non-electric : heating is not electric
+                                        only-electric : heating is electric
+                                        mixed : electricity is used as additional heating source (bathroom, etc), not the main source
+                                        if not specified, the type of heating will be randomly chosen
+                - heat_pump (bool): True if the heating is done (partially or not) through a heat pump, False otherwise
+                
                 
         Other parameters are set to default values, and can be changed later on
             time (int): the number of time step since the beginning of the simulation, the time step is 15 minutes
@@ -61,7 +68,7 @@ class Household:
         self.consumption = np.zeros((35040))  # To be changed, 35 040 is the number of time step in a year, 1 is the number of columns
         self.cooking = np.zeros((35040))
         self.wh = np.zeros((35040))
-        print(self.consumption.shape)
+        #print(self.consumption.shape)
         #self.normalized_load = pd.read_pickle(self.input_directory + '/Graph_CC_An2_V1_normalized.pkl')
         
         self.is_cooking = False
@@ -82,7 +89,20 @@ class Household:
                 self.wh_capacity = 'high'
             else:
                 self.wh_capacity = 'low'
-            
+                
+        self.heating_is_elec = True
+        self.heating_type = params.get('heating_type', 'not_specified')
+        if self.heating_type == 'not_specified':
+            r = np.random.rand()
+            if r < 0.33:
+                self.heating_type = 'non-electric'
+            elif r<0.66:
+                self.heating_type = 'only-electric'
+            else:
+                self.heating_type = 'mixed'
+        if self.heating_type == 'non-electric':
+            self.heating_is_elec = False 
+        self.heat_pump = params.get('heat_pump', False)           
         
 
     def create_normalized_load_profile_file(self, kind):
@@ -214,4 +234,25 @@ class Household:
             wh_index_end = wh_index_begin + wh_duration
             self.consumption[wh_index_begin:wh_index_end] += wh_power
             self.wh[wh_index_begin:wh_index_end] += wh_power
-            
+    
+    
+    def electric_heating(self):
+        """
+        this function computes the consumption of the electric heating
+        
+        Either I use the annual load curve provided by ademe, either I use the meteo data to compute the need
+        """
+        if self.heating_is_elec :
+            hourly_weight = np.array([0.725,0.7,0.775,0.775,0.8,0.95,0.95,1,1,0.98,0.9,0.8,0.8,0.72,0.7,0.68,0.7,0.775,0.875,0.9,0.9,0.8,0.75,0.725])
+            if self.day < 135 or self.day > 304 : 
+                hourly_weight = hourly_weight * 1.3
+        
+    
+    def cold_sources(self):
+        """
+        This function computes the consumption of the cold sources (frigo, congel)
+        
+        using annual load curve provided by ademe
+        
+        """
+        pass
