@@ -42,6 +42,14 @@ class Household:
                                         mixed : electricity is used as additional heating source (bathroom, etc), not the main source
                                         if not specified, the type of heating will be randomly chosen
                 - heat_pump (bool): True if the heating is done (partially or not) through a heat pump, False otherwise
+                - number_cold_sources (int): the number of cold sources in the household (frige, freezer, etc), -1 if the number is unknown
+                - have_washing_machine (bool): True if the household has a washing machine, False otherwise
+                - washing_frequency (str): the frequency of washing, can be 'low', 'medium' or 'high', -1 if the frequency is unknown
+                                             - low : up to 2 times a week
+                                            - medium : between 3 and 5 times a week
+                                            - high : higher than 6 times a week
+                - have_dryer (bool): True if the household has a dryer, False otherwise
+                - have_dishwasher (bool): True if the household has a dishwasher, False otherwise
                 
                 
         Other parameters are set to default values, and can be changed later on
@@ -68,6 +76,7 @@ class Household:
         self.consumption = np.zeros((35040))  # To be changed, 35 040 is the number of time step in a year, 1 is the number of columns
         self.cooking = np.zeros((35040))
         self.wh = np.zeros((35040))
+        self.cold = np.zeros((35040))
         #print(self.consumption.shape)
         #self.normalized_load = pd.read_pickle(self.input_directory + '/Graph_CC_An2_V1_normalized.pkl')
         
@@ -102,7 +111,54 @@ class Household:
                 self.heating_type = 'mixed'
         if self.heating_type == 'non-electric':
             self.heating_is_elec = False 
-        self.heat_pump = params.get('heat_pump', False)           
+        self.heat_pump = params.get('heat_pump', False)      
+        
+        self.number_cold_sources = params.get('number_cold_sources', -1)
+        if self.number_cold_sources == -1:
+            if np.random.rand() < 0.8:
+                self.number_cold_sources = 2
+            else:
+                self.number_cold_sources = 1
+        if self.number_cold_sources > 0:
+            self.cold_power = np.zeros(self.number_cold_sources)
+            for i in range (self.number_cold_sources):
+                if i ==1:
+                    if np.random.rand() < 0.045:
+                        self.cold_power[i] = 85  #750kWh/year
+                    else:
+                        self.cold_power[i] = np.random.randint(22, 57)     #between 200 and 500 kWh/year
+                else:
+                    if np.random.rand() < 0.37:  # 37% chances of having a big freezer
+                        self.cold_power[i] = np.random.randint(34, 80)  #between 300 and 700 kWh/year
+                    else:
+                        self.cold_power[i] = np.random.randint(11, 34) #between 100 and 300 kWh/year
+        
+        self.have_washing_machine = params.get('have_washing_machine', True)
+        self.washing_frequency = params.get('washing_frequency', -1)
+        if self.washing_frequency == -1:
+            r = np.random.rand()
+            if r < 0.28:  #up to 2 times a week
+                self.washing_frequency = "low"
+            elif r < 0.47:  #between 3 and 5 times a week
+                self.washing_frequency = "medium"
+            else:  #between 6 and 14 times a week
+                self.washing_frequency = "high"
+        self.have_dryer = params.get('have_dryer', -1)
+        if self.have_dryer == -1:
+            if np.random.rand() < 0.31:
+                self.have_dryer = True
+            else:
+                self.have_dryer = False
+        self.have_dishwasher = params.get('have_dishwasher', -1)
+        if self.have_dishwasher == -1:
+            if np.random.rand() < 0.71:
+                self.have_dishwasher = True
+            else:
+                self.have_dishwasher = False
+        
+        
+            
+                
         
 
     def create_normalized_load_profile_file(self, kind):
@@ -250,9 +306,45 @@ class Household:
     
     def cold_sources(self):
         """
-        This function computes the consumption of the cold sources (frigo, congel)
+        This function computes the consumption of the cold sources (fridge, freezer)
+        The first applyance is automatically refered as a fridge, or fridge-freezer, the second one is a freezer 
+        For each applyance, a random power consumption has been chosen, using statistics from ademe
         
-        using annual load curve provided by ademe
+        For each day, a constant consumption is added to the consumption array.
+        A seasonal factor is taken into account (the cold source consumes more in summer and less in winter)
+        """
+        cold_index_begin = (self.day - 1) * 24 * 4 
+        cold_index_end = cold_index_begin + 96
+        summer_factor = 1.2
+        winter_factor = 0.9
+        if self.day < 90 or self.day > 304 :  #between november and march
+            for i in range(self.number_cold_sources):
+                self.consumption[cold_index_begin:cold_index_end] += self.cold_power[i] * winter_factor
+                self.cold[cold_index_begin:cold_index_end] += self.cold_power[i] * winter_factor
+        elif self.day > 151 and self.day < 273 : #between june and october
+            for i in range(self.number_cold_sources):
+                self.consumption[cold_index_begin:cold_index_end] += self.cold_power[i] * summer_factor
+                self.cold[cold_index_begin:cold_index_end] += self.cold_power[i] * summer_factor
+        else:
+            for i in range(self.number_cold_sources):
+                self.consumption[cold_index_begin:cold_index_end] += self.cold_power[i]
+                self.cold[cold_index_begin:cold_index_end] += self.cold_power[i]
+        
+    def washing_utilities(self):
+        """
+        This function computes the consumption of the washing machine, dryer and the dishwasher
+        
+        Statistics from ademe shows that 99% of the household have a washing machine, 31% have a dryer and 71% have a dishwasher
+        """
+        pass
+    
+    
+    def other(self):
+        
+        pass
+    def elec_vehicle(self):
+        """
+        This function computes the consumption of the electric vehicle
         
         """
         pass
