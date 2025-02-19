@@ -50,6 +50,10 @@ class Household:
                                             - high : higher than 6 times a week
                 - have_dryer (bool): True if the household has a dryer, False otherwise
                 - have_dishwasher (bool): True if the household has a dishwasher, False otherwise
+                - dishwasher_frequency (str): the frequency of the dishwasher, can be 'low', 'medium' or 'high', -1 if the frequency is unknown
+                                                - low : up to 3 times a week
+                                                - medium : between 4 and 6 times a week
+                                                - high : higher than 7 times a week
                 
                 
         Other parameters are set to default values, and can be changed later on
@@ -155,6 +159,15 @@ class Household:
                 self.have_dishwasher = True
             else:
                 self.have_dishwasher = False
+        self.dishwasher_frequency = params.get('dishwasher_frequency', -1)
+        if self.dishwasher_frequency == -1:
+            r = np.random.rand()
+            if r < 0.61:
+                self.dishwasher_frequency = "low"
+            elif r < 0.92:
+                self.dishwasher_frequency = "medium"
+            else:
+                self.dishwasher_frequency = "high"
         
         
             
@@ -335,7 +348,46 @@ class Household:
         This function computes the consumption of the washing machine, dryer and the dishwasher
         
         Statistics from ademe shows that 99% of the household have a washing machine, 31% have a dryer and 71% have a dishwasher
+        
+        washing-machine : 
+            For each household having a washing machine, the user can choose a frequency of washing (low, medium, high)
+                      - low means 2 or less cycles per week
+                        - medium means between 3 and 5 cycles per week
+                        - high means more than 6 cycles per week
+            at each beginning of the week, a number of cycle to do will be randomly chosen between those ranges
+            For each cycle, the power and length of the cycle will be chosen using statistical data from ademe
+            for each cycle of the week, a starting time will be chosen using hourly load of ademe -> this can be modified if the user is maximising
+            the self consumption
+        
+        Dryer : 
+            A cycle has a high consumption, but dryer are rarely used, especially in summer
+            After each washing-machine cycle, the dryer is either turned on or not, based on seasonality and statistical datas
+            The power and duration of the cycle are chosen using statistical datas from ademe 
+            
+        Dishwasher :
+            Each household having a dishwasher will be put into 3 categories of frequency (low, medium, high)
+                     - low means 3 or less cycles per week
+                     - medium means between 4 and 6 cycles per week
+                     - high means more than 7 cycles per week
+            at each beginning of the week, a number of cycle to do will be randomly chosen between those ranges
+            For each cycle, the power and length of the cycle will be chosen using statistical data from ademe
+        for each cycle of the week, a starting time will be chosen using hourly load of ademe -> this can be modified if the user is maximising
+            the self consumption -> dishwasher are often used after a meal
         """
+        if self.have_washing_machine:
+            number_of_cycle = 0
+            if self.washing_frequency == 'low':
+                number_of_cycle = np.random.randint(0, 3)
+            elif self.washing_frequency == 'medium':
+                number_of_cycle = np.random.randint(3, 6)
+            else : 
+                number_of_cycle = np.random.randint(6, 15)
+            cycles_power = np.zeros(number_of_cycle)
+            cycle_duration = np.zeros(number_of_cycle)
+            cycle_beginning_timestep = np.zeros(number_of_cycle)
+            
+            for i in range(number_of_cycle):
+                pass
         pass
     
     
