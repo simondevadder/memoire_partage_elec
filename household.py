@@ -81,6 +81,7 @@ class Household:
         self.cooking = np.zeros((35040))
         self.wh = np.zeros((35040))
         self.cold = np.zeros((35040))
+        self.washing_usage = np.zeros((35040))
         #print(self.consumption.shape)
         #self.normalized_load = pd.read_pickle(self.input_directory + '/Graph_CC_An2_V1_normalized.pkl')
         
@@ -147,6 +148,7 @@ class Household:
                 self.washing_frequency = "medium"
             else:  #between 6 and 14 times a week
                 self.washing_frequency = "high"
+        self.washing_intelligence = params.get('washing_intelligence', False)
         self.have_dryer = params.get('have_dryer', -1)
         if self.have_dryer == -1:
             if np.random.rand() < 0.31:
@@ -168,6 +170,7 @@ class Household:
                 self.dishwasher_frequency = "medium"
             else:
                 self.dishwasher_frequency = "high"
+        
         
         
             
@@ -382,12 +385,42 @@ class Household:
                 number_of_cycle = np.random.randint(3, 6)
             else : 
                 number_of_cycle = np.random.randint(6, 15)
+            cycles_energy = np.zeros(number_of_cycle)
             cycles_power = np.zeros(number_of_cycle)
             cycle_duration = np.zeros(number_of_cycle)
             cycle_beginning_timestep = np.zeros(number_of_cycle)
+            last_timestep = 0
+            week_duration = 7 * 24 * 4 - 7*7*4  # 7 days, minus 7h a day of night -> 476 timesteps
+            remaining_timesteps = week_duration 
             
+            
+            energy_ranges = [(0, 100), (100, 200), (200, 300), (300,400), (400, 500), (500, 600), (600, 700), (700, 800), (800, 900), (900, 1000),
+                            (1000, 1100), (1100, 1200), (1200, 1300), (1300, 1400), (1400, 1500), (1500, 1600), (1600, 4000)]
+            energy_ranges_proba = [7,11.75,15,14.25,12.75,11.25,7.75,5,3.75,3.5,2.25,1.25,1,0.75,0.5,0.5,1.75]
+            energy_ranges_proba = [x/100 for x in energy_ranges_proba]
             for i in range(number_of_cycle):
-                pass
+                energy_cycle = np.random.choice(energy_ranges, p=energy_ranges_proba)
+                cycles_energy[i] = np.random.randint(energy_cycle[0], energy_cycle[1])
+                if cycles_energy[i] < 300:
+                    cycle_duration[i] = np.random.randint(1, 5)  # between 15min and 1h
+                elif cycles_energy[i] < 700:
+                    cycle_duration[i] = np.random.randint(5, 9)  #between 1h15 and 2h
+                else :
+                    cycle_duration[i] = np.random.randint(9, 13)   #between 2h15 and 4h
+                cycles_power[i] = cycles_energy[i] * 4 / cycle_duration[i]
+                if not self.washing_intelligence : 
+                    window = remaining_timesteps / (number_of_cycle - i)
+                    cycle_beginning_timestep[i] = last_timestep + np.random.randint(0, window)
+                    last_timestep = cycle_beginning_timestep[i] + 16 # we can't start another cycle before 4h
+                    remaining_timesteps = week_duration - last_timestep
+                else:
+                    pass
+                washing_day = cycle_beginning_timestep[i] // (17*4)
+                washing_hour = cycle_beginning_timestep[i] % (17*4) + 6 * 4
+                cycle_beginning_timestep[i] = self.day * 24 * 4 + washing_day * 24 * 4 + washing_hour
+                cycle_end_timestep = cycle_beginning_timestep[i] + cycle_duration[i]
+                self.consumption[cycle_beginning_timestep[i]:cycle_end_timestep] += cycles_power[i] 
+                self.washing_usage[cycle_beginning_timestep[i]:cycle_end_timestep] += cycles_power[i]
         pass
     
     
