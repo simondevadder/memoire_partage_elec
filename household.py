@@ -24,6 +24,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import sys
+import datetime
 
 class Household:
     def __init__(self, params):
@@ -399,7 +400,9 @@ class Household:
             energy_ranges_proba = [7,11.75,15,14.25,12.75,11.25,7.75,5,3.75,3.5,2.25,1.25,1,0.75,0.5,0.5,1.75]
             energy_ranges_proba = [x/100 for x in energy_ranges_proba]
             for i in range(number_of_cycle):
-                energy_cycle = np.random.choice(energy_ranges, p=energy_ranges_proba)
+                energy_ranges_len = np.linspace(0, 16, 17)
+                energy_cycle_int = np.random.choice(energy_ranges_len, p=energy_ranges_proba)
+                energy_cycle = energy_ranges[int(energy_cycle_int)]
                 cycles_energy[i] = np.random.randint(energy_cycle[0], energy_cycle[1])
                 if cycles_energy[i] < 300:
                     cycle_duration[i] = np.random.randint(1, 5)  # between 15min and 1h
@@ -419,8 +422,8 @@ class Household:
                 washing_hour = cycle_beginning_timestep[i] % (17*4) + 6 * 4
                 cycle_beginning_timestep[i] = self.day * 24 * 4 + washing_day * 24 * 4 + washing_hour
                 cycle_end_timestep = cycle_beginning_timestep[i] + cycle_duration[i]
-                self.consumption[cycle_beginning_timestep[i]:cycle_end_timestep] += cycles_power[i] 
-                self.washing_usage[cycle_beginning_timestep[i]:cycle_end_timestep] += cycles_power[i]
+                self.consumption[int(cycle_beginning_timestep[i]):int(cycle_end_timestep)] += cycles_power[i] 
+                self.washing_usage[int(cycle_beginning_timestep[i]):int(cycle_end_timestep)] += cycles_power[i]
         pass
     
     
@@ -428,8 +431,111 @@ class Household:
         
         pass
     def elec_vehicle(self):
+        
         """
         This function computes the consumption of the electric vehicle
         
         """
         pass
+    def launch_year(self):
+        """
+        This function computes the consumption of the household for the whole year
+        
+        """
+        for i in range(365):
+            self.cooking_this_day()
+            self.electric_water_heater()
+            self.cold_sources()
+            if i % 7 == 0:
+                self.washing_utilities()
+            self.day += 1
+            
+        
+    def plot_consumption(self, args, plot_day=False, plot_week=False, plot_to_from=False, plot_whole_year=False):
+        """
+        This function plots the consumption of the household
+        """
+        
+        if plot_day:
+            try:
+                day = args['day'] - 1
+                month = args['month']
+                
+            except: 
+                ValueError("You must provide a day and a month to plot the consumption of a day")
+            
+            day_number = datetime.date(2021, month, day).timetuple().tm_yday
+            index_begin = (day_number - 1) * 24 * 4
+            index_end = index_begin + 24 * 4
+            conso_to_plot = self.consumption[index_begin:index_end]
+            day_to_plot = datetime.date(2021, 1,1) + datetime.timedelta(days=day_number)
+            hours = np.linspace(0, 24, 24*4)
+            
+            sns.lineplot(x=hours, y=conso_to_plot/1000)
+            plt.xlabel('Hour of the day')
+            plt.ylabel('Consumption (kW)')
+            plt.xticks(rotation=45)
+            plt.title('Consumption of the household on ' + day_to_plot.strftime("%d/%m/%Y"))
+            plt.show()
+        
+        if plot_week:
+            try :
+                week = args['week']
+            except:
+                ValueError("You must provide a week number to plot the consumption of a week")
+            
+            index_begin = (week - 1) * 7 * 24 * 4
+            index_end = index_begin + 7 * 24 * 4
+            conso_to_plot = self.consumption[index_begin:index_end]
+            timestep_per_day = 24 * 4
+            cumulative_days = np.linspace(0, 672, 96)
+            day_ticks = [1] + list(cumulative_days[:-1] + 1)  
+            day_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+            
+            sns.lineplot(x=np.linspace(0, 672, 672), y=conso_to_plot/1000)
+            plt.xticks(ticks=day_ticks, labels=day_labels, rotation=45)
+            plt.xlabel('Day of the week')
+            plt.ylabel('Consumption (kW)')
+            plt.title('Consumption of the household during week ' + str(week))
+            plt.show()
+        
+        if plot_to_from:
+            try : 
+                from_day = args['from_day']
+                to_day = args['to_day']
+            except:
+                ValueError("You must provide a starting day and an ending day to plot the consumption between two days")
+            
+            from_day_number = datetime.date(2021, 1, from_day).timetuple().tm_yday
+            to_day_number = datetime.date(2021, 1, to_day).timetuple().tm_yday
+            index_begin = (from_day_number - 1) * 24 * 4
+            index_end = (to_day_number) * 24 * 4
+            conso_to_plot = self.consumption[index_begin:index_end]
+            days = np.linspace(from_day, to_day, to_day - from_day + 1)
+            cumulative_days = np.linspace(0, (to_day - from_day + 1) * 24 * 4, (to_day - from_day + 1) * 24 * 4)
+            day_ticks = [1] + list(cumulative_days[:-1] + 1)
+            day_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+            
+            sns.lineplot(x=np.linspace(0, (to_day - from_day + 1) * 24 * 4, (to_day - from_day + 1) * 24 * 4), y=conso_to_plot/1000)
+            plt.xticks(ticks=day_ticks, labels=day_labels, rotation=45)
+            plt.xlabel('Day')
+            plt.ylabel('Consumption (kW)')
+            plt.title('Consumption of the household between ' +  str(datetime.date(2021, 1,1) + datetime.timedelta(days=from_day_number)).strftime("%d/%m/%Y") + ' and ' + str(datetime.date(2021, 1,1) + datetime.timedelta(days=to_day_number)).strftime("%d/%m/%Y"))
+            plt.show()
+        
+        if plot_whole_year:
+            
+            days_per_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]  
+            cumulative_days = np.cumsum(days_per_month)
+            cumulative_timestep = np.cumsum(days_per_month) * 24 * 4
+
+            month_ticks = [1] + list(cumulative_timestep[:-1] + 1)  
+            month_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+            
+            sns.lineplot(x=np.linspace(0, 35040, 35040), y=self.consumption/1000)
+            plt.xticks(ticks=month_ticks, labels=month_labels, rotation=45)
+            plt.xlabel('Time step')
+            plt.ylabel('Consumption (kW)')
+            plt.title('Consumption of the household during the year')
+            plt.show()
+            

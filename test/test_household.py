@@ -68,5 +68,60 @@ def test_electric_water_heater():
     for i in range(len(household.consumption)):
         total += household.consumption[i]/4
     print(total/1000)
-test_electric_water_heater()
-        
+#test_electric_water_heater()
+  
+def test_cold_source():
+    params['number_cold_sources'] = 2
+    household = Household(params)
+    for i in range(365):
+        household.cold_sources()
+        household.day +=1
+    
+    plt.plot(household.consumption)
+    plt.show()
+    
+    per_15min = np.zeros(96)
+    for i in range(365):
+        per_15min += household.consumption[96*i:96*(i+1)]
+    per_15min = per_15min/365
+    plt.plot(per_15min)
+    plt.show()
+    
+    total = 0
+    for i in range(len(household.consumption)):
+        total += household.consumption[i]/4
+    print(total/1000)      
+
+#test_cold_source()
+
+def test_washing_utilities():
+    params['have_washing_machine'] = True
+    params['washing_frequency']= 'low'
+    params['washing_itelligence']=False
+    household = Household(params)
+    for i in range(52):
+        household.washing_utilities()
+        household.day +=7
+    
+    plt.plot(household.consumption[0:672])
+    plt.show()
+    
+    total = 0
+    for i in range(len(household.consumption)):
+        total += household.consumption[i]/4
+    print(total/1000)
+test_washing_utilities()
+
+    
+def test_total_conso(self):
+    params['wh_capacity'] = 'medium'
+    params['wh_type'] = 'thermodynamic'
+    params['wh_night'] = False
+    params['number_cold_sources'] = 2
+    params['have_washing_machine'] = True
+    params['washing_frequency']= 'low'
+    params['washing_intelligence']=False
+    household = Household(params)
+    household.launch_year()
+    
+    
