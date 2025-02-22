@@ -110,18 +110,25 @@ def test_washing_utilities():
     for i in range(len(household.consumption)):
         total += household.consumption[i]/4
     print(total/1000)
-test_washing_utilities()
+#test_washing_utilities()
 
     
-def test_total_conso(self):
+def test_total_conso():
     params['wh_capacity'] = 'medium'
-    params['wh_type'] = 'thermodynamic'
-    params['wh_night'] = False
+    params['wh_type'] = 'Joules'
+    params['wh_night'] = True
     params['number_cold_sources'] = 2
     params['have_washing_machine'] = True
     params['washing_frequency']= 'low'
     params['washing_intelligence']=False
     household = Household(params)
     household.launch_year()
-    
-    
+    args = {
+        "day" : 15,
+        "month" :  6,
+        "week" : 15,
+        "from_day" : 257,
+        "to_day" : 263,
+    }
+    household.plot_consumption(args, plot_day=True, plot_week=True, plot_to_from=True, plot_whole_year=True)
+test_total_conso()

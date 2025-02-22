@@ -471,11 +471,11 @@ class Household:
             day_to_plot = datetime.date(2021, 1,1) + datetime.timedelta(days=day_number)
             hours = np.linspace(0, 24, 24*4)
             
-            sns.lineplot(x=hours, y=conso_to_plot/1000)
+            sns.lineplot(x=hours, y=conso_to_plot)
             plt.xlabel('Hour of the day')
-            plt.ylabel('Consumption (kW)')
+            plt.ylabel('Consumption (W)')
             plt.xticks(rotation=45)
-            plt.title('Consumption of the household on ' + day_to_plot.strftime("%d/%m/%Y"))
+            plt.title('Consumption of the household on ' + day_to_plot.strftime("%d/%m"))
             plt.show()
         
         if plot_week:
@@ -488,7 +488,7 @@ class Household:
             index_end = index_begin + 7 * 24 * 4
             conso_to_plot = self.consumption[index_begin:index_end]
             timestep_per_day = 24 * 4
-            cumulative_days = np.linspace(0, 672, 96)
+            cumulative_days = np.linspace(0, 672, 7)
             day_ticks = [1] + list(cumulative_days[:-1] + 1)  
             day_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
             
@@ -501,26 +501,27 @@ class Household:
         
         if plot_to_from:
             try : 
-                from_day = args['from_day']
-                to_day = args['to_day']
+                from_day_number = args['from_day']
+                to_day_number = args['to_day']
             except:
                 ValueError("You must provide a starting day and an ending day to plot the consumption between two days")
             
-            from_day_number = datetime.date(2021, 1, from_day).timetuple().tm_yday
-            to_day_number = datetime.date(2021, 1, to_day).timetuple().tm_yday
+
             index_begin = (from_day_number - 1) * 24 * 4
             index_end = (to_day_number) * 24 * 4
             conso_to_plot = self.consumption[index_begin:index_end]
-            days = np.linspace(from_day, to_day, to_day - from_day + 1)
-            cumulative_days = np.linspace(0, (to_day - from_day + 1) * 24 * 4, (to_day - from_day + 1) * 24 * 4)
+            days = np.linspace(from_day_number, to_day_number, to_day_number - from_day_number + 1)
+            cumulative_days = np.linspace(0, (to_day_number - from_day_number + 1) * 24 * 4, to_day_number - from_day_number+ 1)
             day_ticks = [1] + list(cumulative_days[:-1] + 1)
             day_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
             
-            sns.lineplot(x=np.linspace(0, (to_day - from_day + 1) * 24 * 4, (to_day - from_day + 1) * 24 * 4), y=conso_to_plot/1000)
-            plt.xticks(ticks=day_ticks, labels=day_labels, rotation=45)
+            sns.lineplot(x=np.linspace(0, (to_day_number- from_day_number+ 1) * 24 * 4, (to_day_number- from_day_number+ 1) * 24 * 4), y=conso_to_plot)
+            plt.xticks(ticks=day_ticks, labels=cumulative_days, rotation=45)
             plt.xlabel('Day')
-            plt.ylabel('Consumption (kW)')
-            plt.title('Consumption of the household between ' +  str(datetime.date(2021, 1,1) + datetime.timedelta(days=from_day_number)).strftime("%d/%m/%Y") + ' and ' + str(datetime.date(2021, 1,1) + datetime.timedelta(days=to_day_number)).strftime("%d/%m/%Y"))
+            plt.ylabel('Consumption (W)')
+            date_start = (datetime.date(2021, 1,1) + datetime.timedelta(days=from_day_number)).strftime("%d/%m")
+            date_end = (datetime.date(2021, 1,1) + datetime.timedelta(days=to_day_number)).strftime("%d/%m")
+            plt.title('Consumption of the household between ' +  date_start + ' and ' + date_end)
             plt.show()
         
         if plot_whole_year:
