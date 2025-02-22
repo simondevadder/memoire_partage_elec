@@ -70,29 +70,41 @@ class EnergyCommunity:
         self.latitude = 50.85    #default = 50.85
         self.TUTC = 1 #default = 1, 2 in summer time
         
-        self.n_years = params['n_years']
-        self.directory_data = params['directory_data']
-        self.weather_file_name = params['weather_file_name']
-        self.directory_output = params['directory_output']
-        self.begin_year = params['begin_year']
-        self.end_year = params['end_year']
-        
-        self.key = params['key']
-        self.n_households = params['n_households']
+        self.n_years = params.get('n_years', 1)
+        try : 
+            self.directory_data = params['directory_data']
+        except:
+            ValueError("Please, provide the directory containing the weather data")
+        try:
+            self.weather_file_name = params['weather_file_name']
+        except:
+            ValueError("Please, provide the name of the weather data file")
+        self.directory_output = params.get('directory_output', 'No_name_Output')
+        try : 
+            self.begin_year = params['begin_year']
+            self.end_year = params['end_year']
+        except:
+            ValueError(" Please, provide the first and last year of the weather data")
+            
+        self.key = params.get('key', 'hybrid')
+        try:
+            self.n_households = params['n_households']
+        except:
+            ValueError("Please, provide the number of households.")
         self.consumption = np.zeros(self.n_households)
         self.repartition = np.zeros(self.n_households)
         self.production = 0 
         self.taken_to_grid = np.zeros(self.n_households)
         self.injected_to_grid = 0
         
-        self.PV_inclination = np.radians(params['PV_inclination'])
-        self.PV_orientation = np.radians(params['PV_orientation'])
-        self.PV_module_size = params['PV_module_size']
+        self.PV_inclination = np.radians(params.get('PV_inclination', 20))
+        self.PV_orientation = np.radians(params.get('PV_orientation', 180))
+        self.PV_module_size = params.get('PV_module_size', 1)  # default = 1m
         self.PV_efficiency = params.get('PV_efficiency', 0.18)  # ref = 18%
         self.PV_NOCT = params.get('PV_NOCT', 43.6) # Nominal Operating Cell Temperature (°C) ref = 43.6 °C
         self.PV_betacoeff = params.get('PV_betacoeff', 0.004)  # Temperature coefficient (°C) ref = 0.4%/°C
         self.PV_Tref = params.get('PV_Tref', 25)  # Usually 25°C
-        self.PV_area = params['PV_area']
+        self.PV_area = params.get('PV_area', 1)
         self.PV_shaddowing = params.get('PV_shaddowing', [])  # if None, return an empty list
         
         self.sharing_price = params['sharing_price']

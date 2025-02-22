@@ -50,6 +50,7 @@ class Household:
                                             - medium : between 3 and 5 times a week
                                             - high : higher than 6 times a week
                 - have_dryer (bool): True if the household has a dryer, False otherwise
+                - dryer_type (str): the type of dryer, can be 'heat-pump', 'condensation' or 'evacuation', -1 if the type is unknown
                 - have_dishwasher (bool): True if the household has a dishwasher, False otherwise
                 - dishwasher_frequency (str): the frequency of the dishwasher, can be 'low', 'medium' or 'high', -1 if the frequency is unknown
                                                 - low : up to 3 times a week
@@ -73,8 +74,11 @@ class Household:
             
             
         """
-        self.input_directory = params['input_directory']
-        self.output_directory = params['output_directory']
+        try :
+            self.input_directory = params['input_directory']
+        except : 
+            ValueError("Please provide an input directory")
+        self.output_directory = params.get('output_directory', 'no_name_output')
         self.time = 0
         self.hour = 0
         self.day = 1
@@ -156,6 +160,31 @@ class Household:
                 self.have_dryer = True
             else:
                 self.have_dryer = False
+        if self.have_dryer:
+            self.dryer_type = params.get('dryer_type', -1)
+            if self.dryer_type == -1:
+                r = np.random.rand()
+                if r<0.15:
+                    self.dryer_type = 'heat-pump'
+                elif r<0.73 : 
+                    self.dryer_type = 'condensation'
+                else:
+                    self.dryer_type = 'evacuation'
+            if self.dryer_type == 'heat-pump':
+                self.dryer_power = 416  # 416 W, means energy = 860Wh/cycle for cycle dur  = 124min
+            elif self.dryer_type == 'condensation':
+                self.dryer_power = 1112  # 1112 W, means energy = 1632Wh/cycle for cycle dur  = 88min
+            else : 
+                self.dryer_power = 1215  # 1215 W, means energy = 2067Wh/cycle for cycle dur  = 102min
+            self.dryer_usage = params.get('dryer_usage', -1)
+            if self.dryer_usage == -1:
+                r = np.random.rand()
+                if r< 0.4516 : # 14/31 is low
+                    self.dryer_usage = 'low'  # low means 2 cycle or less per week
+                elif r<0.742:  # 9/31 is medium
+                    self.dryer_usage = 'medium'  # medium means between 3 and 5 cycles per week
+                else:  #8/31 is high
+                    self.dryer_usage = 'high' # high means more than 6 cycles per week (up to 9 in this model)
         self.have_dishwasher = params.get('have_dishwasher', -1)
         if self.have_dishwasher == -1:
             if np.random.rand() < 0.71:
@@ -165,11 +194,11 @@ class Household:
         self.dishwasher_frequency = params.get('dishwasher_frequency', -1)
         if self.dishwasher_frequency == -1:
             r = np.random.rand()
-            if r < 0.61:
+            if r < 0.4:  # 2 or less cycle per week  29/72
                 self.dishwasher_frequency = "low"
-            elif r < 0.92:
+            elif r < 0.79:  #between 3 and 4 cycles per week  28/72
                 self.dishwasher_frequency = "medium"
-            else:
+            else:  # more than 5 cycles a week 15/72, up to 10 
                 self.dishwasher_frequency = "high"
         
         
@@ -366,7 +395,11 @@ class Household:
         Dryer : 
             A cycle has a high consumption, but dryer are rarely used, especially in summer
             After each washing-machine cycle, the dryer is either turned on or not, based on seasonality and statistical datas
+                if a lot of machine cycle, the dryer is more used (no place to dry the clothes)
+                in winter, the dryer is more often used
             The power and duration of the cycle are chosen using statistical datas from ademe 
+            we have 3 types of dryer : heat-pump, condensation, evacuation, each of them have a fixed power computed with statistical datas
+            The duration of the cycle of the dryer is randomnly drown with statistical data 
             
         Dishwasher :
             Each household having a dishwasher will be put into 3 categories of frequency (low, medium, high)
@@ -424,7 +457,78 @@ class Household:
                 cycle_end_timestep = cycle_beginning_timestep[i] + cycle_duration[i]
                 self.consumption[int(cycle_beginning_timestep[i]):int(cycle_end_timestep)] += cycles_power[i] 
                 self.washing_usage[int(cycle_beginning_timestep[i]):int(cycle_end_timestep)] += cycles_power[i]
-        pass
+        
+            if self.have_dryer :  # an household can not have a dryer if it does not have a washing machine
+                for i in range(number_of_cycle):  # a dryer can just be used after a washing machine cycle
+                    r = np.random.rand()
+                    if self.day < 151 or self.day > 273 : #from october to june  winter
+                        if self.washing_frequency == 'high': # if a lot of cycle during winter, we almost always use the dryer
+                            if r < 0.9:
+                                dryer_is_active = True
+                            else : 
+                                dryer_is_active = False
+                        elif self.washing_frequency == 'medium':  # if a medium number of cycle, we use the dryer 60% of the time
+                            if r < 0.6:
+                                dryer_is_active = True
+                            else:
+                                dryer_is_active = False
+                        else : 
+                            if r < 0.4:  # if a low number of cycle, we use less the dryer
+                                dryer_is_active = True
+                            else:
+                                dryer_is_active = False
+                            
+                    else:
+                        if self.washing_frequency == 'high': # if a lot of cycle during summer, we often use the dryer, but not always
+                            if r < 0.6: # modify proba
+                                dryer_is_active = True
+                            else:
+                                dryer_is_active = False
+                        elif self.washing_frequency == 'medium':  # if a medium number of cycle, we use the dryer 40% of the time
+                            if r < 0.4:
+                                dryer_is_active = True
+                            else:
+                                dryer_is_active = False
+                        else :  # if a low number of cycle, we use less the dryer
+                            if r < 0.1:
+                                dryer_is_active = True
+                            else:
+                                dryer_is_active = False 
+                    if dryer_is_active:
+                        if self.dryer_type == 'heat-pump':
+                            dryer_power = 416
+                            dryer_duration = 6 + np.random.randint(0, 5)  # between 1h30 and 2h30 
+                        elif self.dryer_type == 'condensation':
+                            dryer_power = 1112
+                            dryer_duration = 4 + np.random.randint(0, 5)  # between 1h and 2h
+                        else:
+                            dryer_power = 1215
+                            dryer_duration = 5 + np.random.randint(0, 5)  # between 1h15 and 2h15
+                        dryer_index_begin = int(cycle_end_timestep + np.random.randint(0, 5))  # up to 1h after end of washing machine cycle
+                        dryer_index_end = dryer_index_begin + dryer_duration
+                        self.consumption[dryer_index_begin:dryer_index_end] += dryer_power
+                        self.washing_usage[dryer_index_begin:dryer_index_end] += dryer_power
+        
+        if self.have_dishwasher:
+            ## cycle energy using the probability fig 4-24
+            ## duration :  3 ranges depending of the total energy consumed 
+            
+            if self.dishwasher_frequency == 'low':
+                dishwasher_num_cycle = np.random.randint(0,3)
+            elif self.dishwasher_frequency == 'medium':
+                dishwasher_num_cycle = np.random.randint(3,5)
+            else : 
+                dishwasher_num_cycle = np.random.randint(5, 11)
+            
+            dishwasher_energy_choice = [(100,200), (200,300), (300,400),(400,500), (500,600), (600,700), (700,800),(800,900),(900,1000),
+                                        (1000,1100),(1100,1200),(1200,1300),(1300,1400),(1400,1500),(1500,1600),(1600,1700),(1700,1800),(1800,2500)]
+            dishwasher_probabilities = []
+            if self.dishwasher_intelligence = False :
+                dishwasher_windows = np.linspace(0,14,14) # we start the dishwasher either afetr lunch or supper
+                taken = np.random.choice(dishwasher_windows, size=dishwasher_num_cycle, replace=False)
+                for i in taken : 
+                     
+            
     
     
     def other(self):
