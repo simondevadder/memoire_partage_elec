@@ -522,12 +522,34 @@ class Household:
             
             dishwasher_energy_choice = [(100,200), (200,300), (300,400),(400,500), (500,600), (600,700), (700,800),(800,900),(900,1000),
                                         (1000,1100),(1100,1200),(1200,1300),(1300,1400),(1400,1500),(1500,1600),(1600,1700),(1700,1800),(1800,2500)]
-            dishwasher_probabilities = []
-            if self.dishwasher_intelligence = False :
+            dishwasher_probabilities = [0.5,1.25,3,4,5.25,7.25,12.25,11.75,11.25,8.5,8.5,8.5,6.5,4.5,3.25,2,1,0.75]
+            dishwasher_energy_len = np.linspace(0, len(dishwasher_energy_choice), len(dishwasher_energy_choice))
+            if self.dishwasher_intelligence == False :
                 dishwasher_windows = np.linspace(0,14,14) # we start the dishwasher either afetr lunch or supper
                 taken = np.random.choice(dishwasher_windows, size=dishwasher_num_cycle, replace=False)
                 for i in taken : 
-                     
+                    if i % 2 ==0 : #after lunch
+                        timestep_window_begin = self.day *24 *4 + i * 24 * 2 + 12 * 4
+                        timestep_window_end = timestep_window_begin + 4*4
+                        timestep_begin = int(np.random.randint(timestep_window_begin, timestep_window_end+1))
+                    else : 
+                        timestep_window_begin = self.day * 24 * 4 + (i-1) * 24 * 2 + 18 * 4
+                        timestep_window_end = timestep_window_begin + 3*4
+                    de_i = np.random.choice(dishwasher_energy_len, p=dishwasher_probabilities)
+                    dishwasher_energy = np.random.randint(dishwasher_energy_choice[de_i][0], dishwasher_energy_choice[de_i][1])
+                    if dishwasher_energy < 700:
+                        dishwasher_duration = np.random.randint(2,5)
+                    elif dishwasher_energy <1300 : 
+                        dishwasher_duration = np.random.randint(4, 9)
+                    else : 
+                        dishwasher_duration = np.random.randint(8,13)
+                    
+                    dishwasher_power = dishwasher_energy * 4 / dishwasher_duration
+                    timestep_end = int(timestep_begin + dishwasher_duration)
+                    self.consumption[timestep_begin:timestep_end]+=dishwasher_power
+                    self.washing_usage[timestep_begin:timestep_end]+=dishwasher_power
+                        
+                        
             
     
     
