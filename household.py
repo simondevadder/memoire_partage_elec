@@ -620,8 +620,7 @@ class Household:
             index_end = index_begin + 7 * 24 * 4
             conso_to_plot = self.consumption[index_begin:index_end]
             timestep_per_day = 24 * 4
-            cumulative_days = np.linspace(0, 672, 7)
-            day_ticks = [1] + list(cumulative_days[:-1] + 1)  
+            day_ticks =  np.linspace(0, 576, 7)
             day_labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
             
             sns.lineplot(x=np.linspace(0, 672, 672), y=conso_to_plot/1000)
