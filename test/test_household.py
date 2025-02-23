@@ -95,9 +95,17 @@ def test_cold_source():
 #test_cold_source()
 
 def test_washing_utilities():
-    params['have_washing_machine'] = True
+    params['have_washing_machine'] = False
     params['washing_frequency']= 'low'
     params['washing_itelligence']=False
+    params['have_dishwasher'] = True
+    params['dishwasher_frequency']= 'high'
+    params['dishwasher_intelligence']=False
+    params['have_dryer']= False
+    params['dryer_usage']= 'high'
+    params['dryer_intelligence']=False
+    params['dryer_type']= 'condensation'
+    
     household = Household(params)
     for i in range(52):
         household.washing_utilities()
@@ -110,7 +118,7 @@ def test_washing_utilities():
     for i in range(len(household.consumption)):
         total += household.consumption[i]/4
     print(total/1000)
-#test_washing_utilities()
+test_washing_utilities()
 
     
 def test_total_conso():
@@ -131,4 +139,4 @@ def test_total_conso():
         "to_day" : 263,
     }
     household.plot_consumption(args, plot_day=True, plot_week=True, plot_to_from=True, plot_whole_year=True)
-test_total_conso()
+#test_total_conso()
