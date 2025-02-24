@@ -121,7 +121,11 @@ class Household:
                 self.heating_type = 'mixed'
         if self.heating_type == 'non-electric':
             self.heating_is_elec = False 
-        self.heat_pump = params.get('heat_pump', False)      
+        self.heat_pump = params.get('heat_pump', False)  
+        self.temperature_array = self.load_temperature_data() 
+        self.n_year_temp_data = len(self.temperature_array[0])
+        self.T_ext_threshold = params.get("T_ext_threshold", 15)
+        self.load_heating = np.zeros((35040, self.n_year_temp_data))
         
         self.number_cold_sources = params.get('number_cold_sources', -1)
         if self.number_cold_sources == -1:
@@ -207,8 +211,9 @@ class Household:
         
             
                 
-        
-
+    def load_temperature_data(self):
+        df = pd.read_csv(self.output_directory + '/temperature.csv',header=None, sep=',', encoding='ISO-8859-1', decimal='.')
+        return df.values
     def create_normalized_load_profile_file(self, kind):
         """This function creates a file with the normalized load profile of each activity, using the ademe load profile
         
@@ -347,9 +352,25 @@ class Household:
         Either I use the annual load curve provided by ademe, either I use the meteo data to compute the need
         """
         if self.heating_is_elec :
+            hours_begin = self.day * 24
+            heating_is_on = []
+            for i in range(self.n_year_temp_data):
+                is_on = 0
+                for h in range(7,22):
+                    if self.temperature_array[hours_begin + h][i] < self.T_ext_threshold:
+                        is_on = 1
+                        break
+                heating_is_on.append(is_on)
+            heating_is_on = np.array(heating_is_on)
+                        
+            power_heating = 950 ### To change 
+            
             hourly_weight = np.array([0.725,0.7,0.775,0.775,0.8,0.95,0.95,1,1,0.98,0.9,0.8,0.8,0.72,0.7,0.68,0.7,0.775,0.875,0.9,0.9,0.8,0.75,0.725])
-            if self.day < 135 or self.day > 304 : 
-                hourly_weight = hourly_weight * 1.3
+
+            for i in range(24*4):
+                it = self.day * 24 * 4 + i
+                hours = i // 4
+                self.load_heating[it] = power_heating * hourly_weight[hours] * heating_is_on
         
     
     def cold_sources(self):

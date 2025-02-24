@@ -18,9 +18,15 @@ from household import Household
 
 params = {
     'input_directory': 'brussels',
-    'output_directory': 'Output_test',
+    'output_directory': 'test_directory_brussels',
 }
 
+def test_load_temperature():
+    household = Household(params)
+    household.load_temperature_data()
+
+#test_load_temperature()
+    
 def test_cooking_this_day():
     household = Household(params)
     for i in range(365):
@@ -146,4 +152,4 @@ def test_total_conso():
         "to_day" : 263,
     }
     household.plot_consumption(args, plot_day=True, plot_week=True, plot_to_from=True, plot_whole_year=True)
-test_total_conso()
+#test_total_conso()
