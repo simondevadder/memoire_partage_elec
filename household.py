@@ -43,6 +43,9 @@ class Household:
                                         mixed : electricity is used as additional heating source (bathroom, etc), not the main source
                                         if not specified, the type of heating will be randomly chosen
                 - heat_pump (bool): True if the heating is done (partially or not) through a heat pump, False otherwise
+                - PEB (str): the PEB value of the household, can be 'A', 'B', 'C', 'D', 'E', 'F', 'G'
+                - Appartement_area (int): the area of the flat in m², -1 if the area is unknown
+                - T_ext_threshold (float): the threshold outdoor temperature for the heating to be turned on, default is 15°C 
                 - number_cold_sources (int): the number of cold sources in the household (frige, freezer, etc), -1 if the number is unknown
                 - have_washing_machine (bool): True if the household has a washing machine, False otherwise
                 - washing_frequency (str): the frequency of washing, can be 'low', 'medium' or 'high', -1 if the frequency is unknown
@@ -87,6 +90,7 @@ class Household:
         self.wh = np.zeros((35040))
         self.cold = np.zeros((35040))
         self.washing_usage = np.zeros((35040))
+        self.other_power = np.zeros((35040))
         #print(self.consumption.shape)
         #self.normalized_load = pd.read_pickle(self.input_directory + '/Graph_CC_An2_V1_normalized.pkl')
         
@@ -126,6 +130,8 @@ class Household:
         self.n_year_temp_data = len(self.temperature_array[0])
         self.T_ext_threshold = params.get("T_ext_threshold", 15)
         self.load_heating = np.zeros((35040, self.n_year_temp_data))
+        self.total_consumption = np.zeros((35040, self.n_year_temp_data)) 
+
         try :
             self.peb = params['PEB']
         except:
@@ -244,6 +250,8 @@ class Household:
             else:  # more than 5 cycles a week 15/72, up to 10 
                 self.dishwasher_frequency = "high"
         self.dishwasher_intelligence = params.get('dishwasher_intelligence', False)
+        
+        self.other_random_param = np.random.rand()
         
         
         
@@ -386,8 +394,12 @@ class Household:
     def electric_heating(self):
         """
         this function computes the consumption of the electric heating
+        For each day, the heating is either turned on or off, based on the average outdoor temperature
         
-        Either I use the annual load curve provided by ademe, either I use the meteo data to compute the need
+        If turned on, the maximum power is computed with the PEB and the area of the flat, the actual power is computed using the hourly weight
+        derived from the ademe load profile 
+        
+        As the temperature data are available for several years, the function will compute the heating consumption for each year
         """
         if self.heating_is_elec :
             hours_begin = (self.day -1 ) * 24
@@ -621,8 +633,20 @@ class Household:
     
     
     def other(self):
+        """ This function computes the consumption of the other appliances, such as TV, computer, lights, etc.
         
-        pass
+            A standard load curve is used, with a random parameter that will modify the power
+            This consumption is constant all year long, and is not affected by the seasonality
+        """
+        other_loads = [65,52,42,38,36,35,44,58,60,62,65,67,72,75,72,73,76,87,105,122,128,132,112,87]
+        other_loads = np.array(other_loads)
+        real_other_loads = other_loads * (self.other_random_param + 0.5)  # between 0.5 and 1.5 times the load
+        it_begin = (self.day - 1) * 24 * 4
+        for i in range(24*4):
+            self.consumption[it_begin + i] += real_other_loads[i // 4]
+            self.other_power[it_begin + i] += real_other_loads[i // 4] 
+
+
     def elec_vehicle(self):
         
         """
@@ -639,9 +663,14 @@ class Household:
             self.cooking_this_day()
             self.electric_water_heater()
             self.cold_sources()
+            self.electric_heating()
+            self.other()
             if i % 7 == 0:
                 self.washing_utilities()
             self.day += 1
+        
+        for year in range(self.n_year_temp_data):
+            self.total_consumption[:, year] = self.consumption + self.load_heating[:, year]
             
         
     def plot_consumption(self, args, plot_day=False, plot_week=False, plot_to_from=False, plot_whole_year=False):
@@ -732,3 +761,14 @@ class Household:
             plt.title('Consumption of the household during the year')
             plt.show()
             
+    def save_consumption(self):
+        """
+        This function saves the consumption of the household in a csv file
+        """
+        
+        
+        if not os.path.exists(self.output_directory):
+            os.makedirs(self.output_directory)
+        df = pd.DataFrame(self.total_annual_consumption)
+        df.to_csv(self.output_directory + '/consumption.csv')
+        print("Consumption saved in " + self.output_directory + '/consumption.csv')

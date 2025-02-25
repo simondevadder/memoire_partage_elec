@@ -19,22 +19,26 @@ from household import Household
 params = {
     'input_directory': 'brussels',
     'output_directory': 'test_directory_brussels',
-    "PEB" : "A"
+    "PEB" : "D"
 }
 
 def test_load_temperature():
+    params["T_ext_threshold"] = 10
     household = Household(params)
     household.load_temperature_data()
     for i in range(365):
         household.electric_heating()
         household.day +=1
-    plt.plot(household.load_heating)
+    first_year = np.zeros(192)
+    for i in range(192):
+        first_year[i] = household.load_heating[i][0]
+    plt.plot(first_year)
     plt.show()
     on = np.sum(household.load_heating, axis=0)/(4000 * household.flat_area)
     
     print(on)
     
-test_load_temperature()
+#test_load_temperature()
     
 def test_cooking_this_day():
     household = Household(params)
@@ -160,5 +164,8 @@ def test_total_conso():
         "from_day" : 257,
         "to_day" : 263,
     }
-    household.plot_consumption(args, plot_day=True, plot_week=True, plot_to_from=True, plot_whole_year=True)
-#test_total_conso()
+    #household.plot_consumption(args, plot_day=True, plot_week=True, plot_to_from=True, plot_whole_year=True)
+    
+    plt.plot(household.total_consumption[0:672])
+    plt.show()
+test_total_conso()
