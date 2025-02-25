@@ -19,13 +19,22 @@ from household import Household
 params = {
     'input_directory': 'brussels',
     'output_directory': 'test_directory_brussels',
+    "PEB" : "A"
 }
 
 def test_load_temperature():
     household = Household(params)
     household.load_temperature_data()
-
-#test_load_temperature()
+    for i in range(365):
+        household.electric_heating()
+        household.day +=1
+    plt.plot(household.load_heating)
+    plt.show()
+    on = np.sum(household.load_heating, axis=0)/(4000 * household.flat_area)
+    
+    print(on)
+    
+test_load_temperature()
     
 def test_cooking_this_day():
     household = Household(params)

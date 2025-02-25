@@ -126,6 +126,44 @@ class Household:
         self.n_year_temp_data = len(self.temperature_array[0])
         self.T_ext_threshold = params.get("T_ext_threshold", 15)
         self.load_heating = np.zeros((35040, self.n_year_temp_data))
+        try :
+            self.peb = params['PEB']
+        except:
+            ValueError("Please provide a PEB value. If not known, please provide an estimation.")
+        if self.peb == 'A':
+            self.annual_heating_value_m2 = np.random.randint(25, 46)
+        elif self.peb == 'B':
+            self.annual_heating_value_m2 = np.random.randint(46, 96)
+        elif self.peb == 'C':
+            self.annual_heating_value_m2 = np.random.randint(96, 151)
+        elif self.peb == 'D':
+            self.annual_heating_value_m2 = np.random.randint(151, 211)
+        elif self.peb == 'E':
+            self.annual_heating_value_m2 = np.random.randint(211, 276)
+        elif self.peb == 'F':
+            self.annual_heating_value_m2 = np.random.randint(276, 346)
+        elif self.peb == 'G':
+            self.annual_heating_value_m2 = np.random.randint(346, 450)
+        else:
+            ValueError("PEB value not recognized")
+        self.flat_area = params.get('Appartement_area', -1)
+        if self.flat_area == -1:
+            r = np.random.rand()
+            if r < 0.1:
+                self.flat_area = np.random.randint(30,52 )  # mean = 41
+            elif r < 0.39:
+                self.flat_area = np.random.randint(52, 74)  # mean  = 63
+            elif r <0.8:
+                self.flat_area = np.random.randint(74, 104)  # mean = 89
+            elif r<0.98:
+                self.flat_area = np.random.randint(100, 124)  # mean = 112
+            elif r<0.99:
+                self.flat_area = np.random.randint(124, 162)  # mean = 143
+            else:
+                self.flat_area = np.random.randint(162, 216)  # mean = 189
+            
+        self.power_heating = self.flat_area * self.annual_heating_value_m2 *1000 / 4198.4  # Total energy / equivalent heating hours (mean)
+            
         
         self.number_cold_sources = params.get('number_cold_sources', -1)
         if self.number_cold_sources == -1:
@@ -352,25 +390,27 @@ class Household:
         Either I use the annual load curve provided by ademe, either I use the meteo data to compute the need
         """
         if self.heating_is_elec :
-            hours_begin = self.day * 24
+            hours_begin = (self.day -1 ) * 24
             heating_is_on = []
             for i in range(self.n_year_temp_data):
                 is_on = 0
+                T_tot = 0
                 for h in range(7,22):
-                    if self.temperature_array[hours_begin + h][i] < self.T_ext_threshold:
-                        is_on = 1
-                        break
+                    T_tot += self.temperature_array[hours_begin + h][i]
+                T_avg = T_tot / 15
+                if T_avg < self.T_ext_threshold:
+                    is_on = 1
                 heating_is_on.append(is_on)
             heating_is_on = np.array(heating_is_on)
                         
-            power_heating = 950 ### To change 
+         
             
             hourly_weight = np.array([0.725,0.7,0.775,0.775,0.8,0.95,0.95,1,1,0.98,0.9,0.8,0.8,0.72,0.7,0.68,0.7,0.775,0.875,0.9,0.9,0.8,0.75,0.725])
 
             for i in range(24*4):
-                it = self.day * 24 * 4 + i
+                it = (self.day-1) * 24 * 4 + i
                 hours = i // 4
-                self.load_heating[it] = power_heating * hourly_weight[hours] * heating_is_on
+                self.load_heating[it] = self.power_heating * hourly_weight[hours] * heating_is_on
         
     
     def cold_sources(self):
