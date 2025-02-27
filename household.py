@@ -42,8 +42,8 @@ class Household:
                                         only-electric : heating is electric
                                         mixed : electricity is used as additional heating source (bathroom, etc), not the main source
                                         if not specified, the type of heating will be randomly chosen
-                - heat_pump (bool): True if the heating is done (partially or not) through a heat pump, False otherwise
                 - PEB (str): the PEB value of the household, can be 'A', 'B', 'C', 'D', 'E', 'F', 'G'
+                - heating_efficiency (float): the efficiency or COP of the heating system, default is 1 
                 - Appartement_area (int): the area of the flat in m², -1 if the area is unknown
                 - T_ext_threshold (float): the threshold outdoor temperature for the heating to be turned on, default is 15°C 
                 - number_cold_sources (int): the number of cold sources in the household (frige, freezer, etc), -1 if the number is unknown
@@ -54,6 +54,10 @@ class Household:
                                             - high : higher than 6 times a week
                 - have_dryer (bool): True if the household has a dryer, False otherwise
                 - dryer_type (str): the type of dryer, can be 'heat-pump', 'condensation' or 'evacuation', -1 if the type is unknown
+                - dryer_usage (str) : the frequency of the dryer, can be 'low', 'medium' or 'high', -1 if the frequency is unknown
+                                        - low : up to 2 times a week
+                                        - medium : between 3 and 5 times a week
+                                        - high : higher than 6 times a week
                 - have_dishwasher (bool): True if the household has a dishwasher, False otherwise
                 - dishwasher_frequency (str): the frequency of the dishwasher, can be 'low', 'medium' or 'high', -1 if the frequency is unknown
                                                 - low : up to 3 times a week
@@ -125,7 +129,6 @@ class Household:
                 self.heating_type = 'mixed'
         if self.heating_type == 'non-electric':
             self.heating_is_elec = False 
-        self.heat_pump = params.get('heat_pump', False)  
         self.temperature_array = self.load_temperature_data() 
         self.n_year_temp_data = len(self.temperature_array[0])
         self.T_ext_threshold = params.get("T_ext_threshold", 15)
@@ -167,8 +170,9 @@ class Household:
                 self.flat_area = np.random.randint(124, 162)  # mean = 143
             else:
                 self.flat_area = np.random.randint(162, 216)  # mean = 189
-            
-        self.power_heating = self.flat_area * self.annual_heating_value_m2 *1000 / 4198.4  # Total energy / equivalent heating hours (mean)
+        
+        self.heating_efficiency = params.get('heating_efficiency', 1)
+        self.power_heating = self.flat_area * self.annual_heating_value_m2 *1000 / (self.heating_efficiency * 4198.4)  # Total energy / equivalent heating hours (mean)
             
         
         self.number_cold_sources = params.get('number_cold_sources', -1)

@@ -107,21 +107,21 @@ class EnergyCommunity:
         self.PV_area = params.get('PV_area', 1)
         self.PV_shaddowing = params.get('PV_shaddowing', [])  # if None, return an empty list
         
-        self.sharing_price = params['sharing_price']
-        self.grid_price = params['grid_price']
-        self.grid_injection_price = params['grid_injection_price']
+        self.sharing_price = params.get('sharing_price', 1)
+        self.grid_price = params.get('grid_price', 1)
+        self.grid_injection_price = params.get('grid_injection_price',1)
         
-        self.n_elevators = params['n_elevators']
-        self.elevator_consumption = params['elevator_consumption']
-        self.n_floor = params['n_floor']
+        self.n_elevators = params.get('n_elevators',0)
+        self.elevator_consumption = params('elevator_consumption',0)
+        self.n_floor = params.get('n_floor',1)
         
-        self.common_area = params['common_area'] # for heating and lighting
+        self.common_area = params.get('common_area', 0) # for heating and lighting
         
 
-        self.electric_heating = params['electric_heating'] # if false, not taken into account
+        self.electric_heating = params.get('electric_heating', False) # if false, not taken into account
         if self.electric_heating:
-            self.type_heating = params['type_heating'] # either electric boiler, heating or electric radiators
-            self.common_area_volume = params['common_area_volume'] # volume of the common area (m^3)
+            self.type_heating = params.get('type_heating', None) # either electric boiler, heating or electric radiators
+            self.common_area_volume = params.get('common_area_volume', 0) # volume of the common area (m^3)
         
     
     def get_weather_data(self):
