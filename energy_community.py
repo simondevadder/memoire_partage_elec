@@ -107,6 +107,7 @@ class EnergyCommunity:
         self.PV_area = params.get('PV_area', 1)
         self.PV_shaddowing = params.get('PV_shaddowing', [])  # if None, return an empty list
         
+        """
         self.sharing_price = params.get('sharing_price', 1)
         self.grid_price = params.get('grid_price', 1)
         self.grid_injection_price = params.get('grid_injection_price',1)
@@ -122,7 +123,7 @@ class EnergyCommunity:
         if self.electric_heating:
             self.type_heating = params.get('type_heating', None) # either electric boiler, heating or electric radiators
             self.common_area_volume = params.get('common_area_volume', 0) # volume of the common area (m^3)
-        
+        """
     
     def get_weather_data(self):
         """ This function get the weather data and put them in usable form in self.directory_output

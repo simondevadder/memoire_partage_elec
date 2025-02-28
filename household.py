@@ -134,46 +134,47 @@ class Household:
         self.T_ext_threshold = params.get("T_ext_threshold", 15)
         self.load_heating = np.zeros((35040, self.n_year_temp_data))
         self.total_consumption = np.zeros((35040, self.n_year_temp_data)) 
+        if self.heating_is_elec:
 
-        try :
-            self.peb = params['PEB']
-        except:
-            ValueError("Please provide a PEB value. If not known, please provide an estimation.")
-        if self.peb == 'A':
-            self.annual_heating_value_m2 = np.random.randint(25, 46)
-        elif self.peb == 'B':
-            self.annual_heating_value_m2 = np.random.randint(46, 96)
-        elif self.peb == 'C':
-            self.annual_heating_value_m2 = np.random.randint(96, 151)
-        elif self.peb == 'D':
-            self.annual_heating_value_m2 = np.random.randint(151, 211)
-        elif self.peb == 'E':
-            self.annual_heating_value_m2 = np.random.randint(211, 276)
-        elif self.peb == 'F':
-            self.annual_heating_value_m2 = np.random.randint(276, 346)
-        elif self.peb == 'G':
-            self.annual_heating_value_m2 = np.random.randint(346, 450)
-        else:
-            ValueError("PEB value not recognized")
-        self.flat_area = params.get('Appartement_area', -1)
-        if self.flat_area == -1:
-            r = np.random.rand()
-            if r < 0.1:
-                self.flat_area = np.random.randint(30,52 )  # mean = 41
-            elif r < 0.39:
-                self.flat_area = np.random.randint(52, 74)  # mean  = 63
-            elif r <0.8:
-                self.flat_area = np.random.randint(74, 104)  # mean = 89
-            elif r<0.98:
-                self.flat_area = np.random.randint(100, 124)  # mean = 112
-            elif r<0.99:
-                self.flat_area = np.random.randint(124, 162)  # mean = 143
+            try :
+                self.peb = params['PEB']
+            except:
+                ValueError("Please provide a PEB value. If not known, please provide an estimation.")
+            if self.peb == 'A':
+                self.annual_heating_value_m2 = np.random.randint(25, 46)
+            elif self.peb == 'B':
+                self.annual_heating_value_m2 = np.random.randint(46, 96)
+            elif self.peb == 'C':
+                self.annual_heating_value_m2 = np.random.randint(96, 151)
+            elif self.peb == 'D':
+                self.annual_heating_value_m2 = np.random.randint(151, 211)
+            elif self.peb == 'E':
+                self.annual_heating_value_m2 = np.random.randint(211, 276)
+            elif self.peb == 'F':
+                self.annual_heating_value_m2 = np.random.randint(276, 346)
+            elif self.peb == 'G':
+                self.annual_heating_value_m2 = np.random.randint(346, 450)
             else:
-                self.flat_area = np.random.randint(162, 216)  # mean = 189
-        
-        self.heating_efficiency = params.get('heating_efficiency', 1)
-        self.power_heating = self.flat_area * self.annual_heating_value_m2 *1000 / (self.heating_efficiency * 4198.4)  # Total energy / equivalent heating hours (mean)
+                ValueError("PEB value not recognized")
+            self.flat_area = params.get('Appartement_area', -1)
+            if self.flat_area == -1:
+                r = np.random.rand()
+                if r < 0.1:
+                    self.flat_area = np.random.randint(30,52 )  # mean = 41
+                elif r < 0.39:
+                    self.flat_area = np.random.randint(52, 74)  # mean  = 63
+                elif r <0.8:
+                    self.flat_area = np.random.randint(74, 104)  # mean = 89
+                elif r<0.98:
+                    self.flat_area = np.random.randint(100, 124)  # mean = 112
+                elif r<0.99:
+                    self.flat_area = np.random.randint(124, 162)  # mean = 143
+                else:
+                    self.flat_area = np.random.randint(162, 216)  # mean = 189
             
+            self.heating_efficiency = params.get('heating_efficiency', 1)
+            self.power_heating = self.flat_area * self.annual_heating_value_m2 *1000 / (self.heating_efficiency * 4198.4)  # Total energy / equivalent heating hours (mean)
+                
         
         self.number_cold_sources = params.get('number_cold_sources', -1)
         if self.number_cold_sources == -1:
@@ -262,7 +263,7 @@ class Household:
             
                 
     def load_temperature_data(self):
-        df = pd.read_csv(self.output_directory + '/temperature.csv',header=None, sep=',', encoding='ISO-8859-1', decimal='.')
+        df = pd.read_csv(self.input_directory + '/temperature.csv',header=None, sep=',', encoding='ISO-8859-1', decimal='.')
         return df.values
     def create_normalized_load_profile_file(self, kind):
         """This function creates a file with the normalized load profile of each activity, using the ademe load profile
