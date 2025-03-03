@@ -63,6 +63,12 @@ class Household:
                                                 - low : up to 3 times a week
                                                 - medium : between 4 and 6 times a week
                                                 - high : higher than 7 times a week
+                - grid_price_type (str): the type of grid price, can be 'bi' or 'mono', default is 'bi'
+                - grid_price_day (float): the price of the electricity in €/kWh during the day, -1 if the price is unknown
+                                            if grid_price_type is 'mono', this is the price of the electricity
+                - grid_price_night (float): the price of the electricity in €/kWh during the night, -1 if the price is unknown
+                - annual_sharing_tax (float): the annual tax for sharing the electricity, default is 10.11€ 
+                - tax_kwh (float): the tax for each kWh consumed from the sharing activities, default is 0.023€
                 
                 
         Other parameters are set to default values, and can be changed later on
@@ -257,6 +263,23 @@ class Household:
         self.dishwasher_intelligence = params.get('dishwasher_intelligence', False)
         
         self.other_random_param = np.random.rand()
+        
+        self.grid_price_type = params.get('grid_price_type', 'bi')
+        if self.grid_price_type == 'bi':
+            self.grid_price_day = params.get('grid_price_day', -1)
+            self.grid_price_night = params.get('grid_price_night', -1)
+            if self.grid_price_day == -1:
+                self.grid_price = np.random.randint(30, 50)/100
+            if self.grid_price_night == -1:
+                self.grid_price_night = np.random.randint(25, 35)/100
+        elif self.grid_price_type == 'mono':
+            self.grid_price_day = params.get('grid_price_day', -1)
+            if self.grid_price_day == -1:
+                self.grid_price = np.random.randint(30, 50)/100
+            self.grid_price_night = self.grid_price_day
+        self.annual_sharing_tax = params.get('annual_sharing_tax', 10.11)  # each household pays a tax of 10.11€/year
+        self.tax_kwh = params.get('tax_kwh', 0.023)  # each kWh consumed from the sharing activities costs 0.023€ in tax
+        
         
         
         

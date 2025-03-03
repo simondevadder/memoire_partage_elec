@@ -51,40 +51,40 @@ def example_1():
                         "wh_night" : True, "wh_capacity" : 'high', "heating_type" : 'non-electric',
                         "number_cold_source" : 2, "have_washing_machine" : True, "washing_frequency" : 'medium',
                         "have_dryer" : True, "dryer_usage" : 'medium', "dryer_type" : 'condensation',
-                        "have_dishwasher" : True, "dishwasher_frequency" : 'high'}
+                        "have_dishwasher" : True, "dishwasher_frequency" : 'high', "grid_price_day" : 0.36, "grid_price_night" : 0.29}
         flat_1_param = {"input_directory": "input_data", "output_directory" : "flat_1_out", "wh_type" : 'Joules',
                         "wh_night" : True, "wh_capacity" : 'medium', "heating_type" : 'non-electric',
                         "number_cold_source" : 1, "have_washing_machine" : True, "washing_frequency" : 'medium',
-                        "have_dryer" : False, "have_dishwasher" : True, "dishwasher_frequency" : 'low'}
+                        "have_dryer" : False, "have_dishwasher" : True, "dishwasher_frequency" : 'low', "grid_price_day" : 0.39, "grid_price_night" : 0.30}
         flat_2_param = {"input_directory": "input_data", "output_directory" : "flat_2_out", "wh_type" : 'Joules',
                         "wh_night" : True, "wh_capacity" : 'medium', "heating_type" : 'non-electric',
                         "number_cold_source" : 1, "have_washing_machine" : True, "washing_frequency" : 'medium',
                         "have_dryer" : True, "dryer_usage" : 'medium', "dryer_type" : 'condensation',
-                        "have_dishwasher" : True, "dishwasher_frequency" : 'low'}
+                        "have_dishwasher" : True, "dishwasher_frequency" : 'low', "grid_price_day" : 0.39, "grid_price_night" : 0.30}
         flat_3_param = {"input_directory": "input_data", "output_directory" : "flat_3_out", "wh_type" : 'Joules',
                         "wh_night" : True, "wh_capacity" : 'medium', "heating_type" : 'non-electric',
                         "number_cold_source" : 1, "have_washing_machine" : True, "washing_frequency" : 'low',
-                        "have_dryer" : False, "have_dishwasher" : True, "dishwasher_frequency" : 'medium'}
+                        "have_dryer" : False, "have_dishwasher" : True, "dishwasher_frequency" : 'medium', "grid_price_day" : 0.39, "grid_price_night" : 0.30}
         flat_4_param = {"input_directory": "input_data", "output_directory" : "flat_4_out", "wh_type" : 'Joules',
                         "wh_night" : True, "wh_capacity" : 'medium', "heating_type" : 'non-electric',
                         "number_cold_source" : 1, "have_washing_machine" : True, "washing_frequency" : 'low',
-                        "have_dryer" : False, "have_dishwasher" : False}
+                        "have_dryer" : False, "have_dishwasher" : False, "grid_price_day" : 0.36, "grid_price_night" : 0.33}
         flat_5_param = {"input_directory": "input_data", "output_directory" : "flat_5_out", "wh_type" : 'Joules',
                         "wh_night" : True, "wh_capacity" : 'medium', "heating_type" : 'non-electric',
                         "number_cold_source" : 1, "have_washing_machine" : True, "washing_frequency" : 'low',
-                        "have_dryer" : False, "have_dishwasher" : False}
+                        "have_dryer" : False, "have_dishwasher" : False, "grid_price_day" : 0.36, "grid_price_night" : 0.33}
         flat_6_param = {"input_directory": "input_data", "output_directory" : "flat_6_out", "wh_type" : 'Joules',
                         "wh_night" : True, "wh_capacity" : 'medium', "heating_type" : 'non-electric',
                         "number_cold_source" : 1, "have_washing_machine" : True, "washing_frequency" : 'low',
-                        "have_dryer" : False, "have_dishwasher" : True, "dishwasher_frequency" : 'low'}
+                        "have_dryer" : False, "have_dishwasher" : True, "dishwasher_frequency" : 'low', "grid_price_day" : 0.36, "grid_price_night" : 0.29}
 
         flat_7_param = {"input_directory": "input_data", "output_directory" : "flat_7_out", "wh_type" : 'Joules',
                         "wh_night" : True, "wh_capacity" : 'medium', "heating_type" : 'non-electric',
                         "number_cold_source" : 1, "have_washing_machine" : True, "washing_frequency" : 'low',
-                        "have_dryer" : False, "have_dishwasher" : False}
+                        "have_dryer" : False, "have_dishwasher" : False, "grid_price_day" : 0.36, "grid_price_night" : 0.29}
         pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_out", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
-                        "n_households" : 8, "key" : "hybrid", "PV_inclination": [40,40], "PV_orientation" : [80,260], "PV_area" : [122.5,103], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.99, 0.008],
-                        "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25,  }
+                        "n_households" : 8, "key" : "hybrid", "PV_inclination": [40,40], "PV_orientation" : [80,260], "PV_area" : [96,80], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.99, 0.008],
+                        "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 33000, "estimated_lifetime" : 30 }
         duplex = Household(duplex_params)
         flat_1 = Household(flat_1_param)
         flat_2 = Household(flat_2_param)
@@ -95,7 +95,7 @@ def example_1():
         flat_7 = Household(flat_7_param)
         community = EnergyCommunity(pv_params)
         #community.get_weather_data()
-        #community.func_compute_total_production()
+        community.func_compute_total_production()
         production = pd.read_csv("pv_out/production.csv", header=None)
         production_2017 = production[0].to_numpy()
         production_2018 = production[1].to_numpy()
@@ -162,7 +162,7 @@ def example_1():
                 repartition_2019[i], from_grid_2019[i], injection_2019[i] = community.func_repartition(consumption_2019, prod_2019)
                 
                 
-                
+        """
         if not os.path.exists("total_output"):
             os.makedirs("total_output")
         
@@ -178,8 +178,49 @@ def example_1():
         np.savetxt("total_output/injection_2017.csv", injection_2017, delimiter=',', fmt="%.1f")
         np.savetxt("total_output/injection_2018.csv", injection_2018, delimiter=',', fmt="%.1f")
         np.savetxt("total_output/injection_2019.csv", injection_2019, delimiter=',', fmt="%.1f")
+        """
+        #########################################################################################
+        # Compute the total gain for each year
+        #########################################################################################
+        repartition_total_2017 = np.sum(repartition_2017, axis=0)
+        repartition_total_2018 = np.sum(repartition_2018, axis=0)
+        repartition_total_2019 = np.sum(repartition_2019, axis=0)
+        
+        from_grid_total_2017 = np.sum(from_grid_2017, axis=0)
+        from_grid_total_2018 = np.sum(from_grid_2018, axis=0)
+        from_grid_total_2019 = np.sum(from_grid_2019, axis=0)
+        
+        injection_total_2017 = np.sum(injection_2017)
+        injection_total_2018 = np.sum(injection_2018)
+        injection_total_2019 = np.sum(injection_2019)
+        
+        paid_to_PV_2017 = repartition_total_2017 * community.sharing_price/4000  # in €/kWh
+        paid_to_PV_2018 = repartition_total_2018 * community.sharing_price/4000  # in €/kWh
+        paid_to_PV_2019 = repartition_total_2019 * community.sharing_price/4000  # in €/kWh
+        
+        paid_from_grid_2017 = injection_total_2017 * community.grid_injection_price/4000  # in €/kWh
+        paid_from_grid_2018 = injection_total_2018 * community.grid_injection_price/4000  # in €/kWh
+        paid_from_grid_2019 = injection_total_2019 * community.grid_injection_price/4000  # in €/kWh
+        
+        without_sharing_2017 = np.sum(production_2017) * community.grid_injection_price/1000
+        without_sharing_2018 = np.sum(production_2018) * community.grid_injection_price/1000
+        without_sharing_2019 = np.sum(production_2019) * community.grid_injection_price/1000
+        
+  
+        total_paid_2017 = np.sum(paid_to_PV_2017) + paid_from_grid_2017
+        total_paid_2018 = np.sum(paid_to_PV_2018) + paid_from_grid_2018
+        total_paid_2019 = np.sum(paid_to_PV_2019) + paid_from_grid_2019
+        
+        community.compute_gc_gain()
+        community.compute_minimal_revenue()
+        print("Total paid : ", total_paid_2017, ", ", total_paid_2018, ", ", total_paid_2019)
+        print("Total gain without sharing : ", without_sharing_2017, ", ", without_sharing_2018, ", ", without_sharing_2019)
+        print("minimum return : ", community.minimal_revenue)
+        print("Total gain from gc : ", community.gc_revenue)
+        
+        
 
-#example_1()
+example_1()
                 
 def example_1_pricing_evaluation():
         price_grid_to_home = 0.36/1000  # in €/Wh
@@ -241,7 +282,7 @@ def example_1_pricing_evaluation():
         
         
         
-example_1_pricing_evaluation()      
+#example_1_pricing_evaluation()      
         
         
     
