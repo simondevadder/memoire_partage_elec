@@ -83,8 +83,8 @@ def example_1():
                         "number_cold_source" : 1, "have_washing_machine" : True, "washing_frequency" : 'low',
                         "have_dryer" : False, "have_dishwasher" : False, "grid_price_day" : 0.36, "grid_price_night" : 0.29}
         pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_out", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
-                        "n_households" : 8, "key" : "hybrid", "PV_inclination": [40,40], "PV_orientation" : [80,260], "PV_area" : [96,80], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.99, 0.008],
-                        "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 33000, "estimated_lifetime" : 30 }
+                        "n_households" : 8, "key" : "hybrid", "PV_inclination": [40], "PV_orientation" : [260], "PV_area" : [77], "PV_efficiency" : 0.182, "PV_module_size": [1.6, 0.99, 0.008],
+                        "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 18000, "estimated_lifetime" : 25 }
         duplex = Household(duplex_params)
         flat_1 = Household(flat_1_param)
         flat_2 = Household(flat_2_param)
@@ -162,7 +162,7 @@ def example_1():
                 repartition_2019[i], from_grid_2019[i], injection_2019[i] = community.func_repartition(consumption_2019, prod_2019)
                 
                 
-        """
+        
         if not os.path.exists("total_output"):
             os.makedirs("total_output")
         
@@ -178,7 +178,7 @@ def example_1():
         np.savetxt("total_output/injection_2017.csv", injection_2017, delimiter=',', fmt="%.1f")
         np.savetxt("total_output/injection_2018.csv", injection_2018, delimiter=',', fmt="%.1f")
         np.savetxt("total_output/injection_2019.csv", injection_2019, delimiter=',', fmt="%.1f")
-        """
+        
         #########################################################################################
         # Compute the total gain for each year
         #########################################################################################
@@ -205,7 +205,10 @@ def example_1():
         without_sharing_2017 = np.sum(production_2017) * community.grid_injection_price/1000
         without_sharing_2018 = np.sum(production_2018) * community.grid_injection_price/1000
         without_sharing_2019 = np.sum(production_2019) * community.grid_injection_price/1000
-        
+        total_production_2017 = np.sum(production_2017)/1000
+        total_production_2018 = np.sum(production_2018)/1000
+        total_production_2019 = np.sum(production_2019)/1000
+        print("Total production in kWh : ", total_production_2017, ", ", total_production_2018, ", ", total_production_2019)
   
         total_paid_2017 = np.sum(paid_to_PV_2017) + paid_from_grid_2017
         total_paid_2018 = np.sum(paid_to_PV_2018) + paid_from_grid_2018
