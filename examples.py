@@ -95,7 +95,7 @@ def example_1():
         flat_7 = Household(flat_7_param)
         community = EnergyCommunity(pv_params)
         #community.get_weather_data()
-        community.func_compute_total_production()
+        #community.func_compute_total_production()
         production = pd.read_csv("pv_out/production.csv", header=None)
         production_2017 = production[0].to_numpy()
         production_2018 = production[1].to_numpy()
@@ -223,11 +223,16 @@ def example_1():
         
         
 
-example_1()
+#example_1()
                 
 def example_1_pricing_evaluation():
-        price_grid_to_home = 0.36/1000  # in €/Wh
-        price_PV_to_grid = 0.043/1000  # in €/Wh
+        price_grid_day = [0.36,0.39,0.39,0.39,0.36,0.36,0.36, 0.36]  # in €/Wh
+        price_grid_day = np.array(price_grid_day)/1000
+        
+        price_grid_night = [0.29,0.30,0.30,0.30,0.33,0.33,0.29, 0.29]  # in €/Wh
+        price_grid_night = np.array(price_grid_night)/1000
+        
+        price_PV_to_grid = 0.04/1000  # in €/Wh
         
         price_PV_to_home = 0.2/1000  # in €/Wh
         
@@ -250,42 +255,159 @@ def example_1_pricing_evaluation():
         gain_without_sharing_2017 = np.sum(production_2017) * price_PV_to_grid
         gain_without_sharing_2018 = np.sum(production_2018) * price_PV_to_grid
         gain_without_sharing_2019 = np.sum(production_2019) * price_PV_to_grid
-        print("production : ", np.sum(production_2017))
         
-        cost_without_sharing_2017 = np.sum(consumption_2017, axis=0) * price_grid_to_home/4
-        cost_without_sharing_2018 = np.sum(consumption_2018, axis=0) * price_grid_to_home/4
-        cost_without_sharing_2019 = np.sum(consumption_2019, axis=0) * price_grid_to_home/4
-        print("Cost without sharing : ", cost_without_sharing_2017, )
+        tot_gain_without_sharing = np.zeros((3))
+        tot_gain_without_sharing[0] = gain_without_sharing_2017
+        tot_gain_without_sharing[1] = gain_without_sharing_2018
+        tot_gain_without_sharing[2] = gain_without_sharing_2019
+        mean_gain_without_sharing = np.mean(tot_gain_without_sharing)
+        #print("production : ", np.sum(production_2017))
+        
+        tot_conso_day = np.zeros((8, 3))
+        tot_conso_night = np.zeros((8, 3))
+        tot_cost_grid_without_sharing = np.zeros((8, 3))
+        mean_costs_grid_without_sharing = np.zeros((8))
+        
+        tot_conso_day_sharing = np.zeros((8, 3))
+        tot_conso_night_sharing = np.zeros((8, 3))
+        total_cost_grid_sharing = np.zeros((8, 3))
+        mean_costs_grid_sharing = np.zeros((8))
+        tot_conso_grid = np.zeros((8, 3))
                 
-        paid_to_PV_2017 = np.sum(repartition_2017, axis=0) * price_PV_to_home/4
-        paid_to_PV_2018 = np.sum(repartition_2018, axis=0) * price_PV_to_home/4
-        paid_to_PV_2019 = np.sum(repartition_2019, axis=0) * price_PV_to_home/4
         
-        paid_to_grid_2017 = np.sum(from_grid_2017, axis=0) * price_grid_to_home/4
-        paid_to_grid_2018 = np.sum(from_grid_2018, axis=0) * price_grid_to_home/4
-        paid_to_grid_2019 = np.sum(from_grid_2019, axis=0) * price_grid_to_home/4
+        for i in range(35040):
+                quart_sem = i % 672
+                quart_day = i % 96
+                if quart_sem >=478 : 
+                        tot_conso_night[:, 0] += consumption_2017[i]/4
+                        tot_conso_night[:, 1] += consumption_2018[i]/4
+                        tot_conso_night[:, 2] += consumption_2019[i]/4
+                        
+                        tot_conso_night_sharing[:, 0] += from_grid_2017[i] /4
+                        tot_conso_night_sharing[:, 1] += from_grid_2018[i] /4
+                        tot_conso_night_sharing[:, 2] += from_grid_2019[i]/4
+                elif quart_day <= 28 or quart_day >= 88 :
+                        tot_conso_night[:, 0] += consumption_2017[i]/4
+                        tot_conso_night[:, 1] += consumption_2018[i]/4
+                        tot_conso_night[:, 2] += consumption_2019[i]/4
+                        tot_conso_night_sharing[:, 0] += from_grid_2017[i]/4
+                        tot_conso_night_sharing[:, 1] += from_grid_2018[i]/4
+                        tot_conso_night_sharing[:, 2] += from_grid_2019[i]/4
+                else : 
+                        tot_conso_day[:, 0] += consumption_2017[i]/4
+                        tot_conso_day[:, 1] += consumption_2018[i]/4
+                        tot_conso_day[:, 2] += consumption_2019[i]/4
+                        
+                        tot_conso_day_sharing[:, 0] += from_grid_2017[i]/4
+                        tot_conso_day_sharing[:, 1] += from_grid_2018[i]/4
+                        tot_conso_day_sharing[:, 2] += from_grid_2019[i]/4
         
-        total_paid_2017 = paid_to_PV_2017 + paid_to_grid_2017
-        total_paid_2018 = paid_to_PV_2018 + paid_to_grid_2018
-        total_paid_2019 = paid_to_PV_2019 + paid_to_grid_2019
-        print("Total paid :", total_paid_2017)
+                
+        for i in range(8):
+                tot_cost_grid_without_sharing[i, 0] = tot_conso_day[i, 0] * price_grid_day[i] + tot_conso_night[i, 0] * price_grid_night[i]
+                tot_cost_grid_without_sharing[i, 1] = tot_conso_day[i, 1] * price_grid_day[i] + tot_conso_night[i, 1] * price_grid_night[i]
+                tot_cost_grid_without_sharing[i, 2] = tot_conso_day[i, 2] * price_grid_day[i] + tot_conso_night[i, 2] * price_grid_night[i]
+                mean_costs_grid_without_sharing[i] = np.mean(tot_cost_grid_without_sharing[i])
+                
+                total_cost_grid_sharing[i, 0] = tot_conso_day_sharing[i, 0] * price_grid_day[i]+ tot_conso_night_sharing[i, 0] * price_grid_night[i]
+                total_cost_grid_sharing[i, 1] = tot_conso_day_sharing[i, 1] * price_grid_day[i] + tot_conso_night_sharing[i, 1] * price_grid_night[i]
+                total_cost_grid_sharing[i, 2] = tot_conso_day_sharing[i, 2] * price_grid_day[i] + tot_conso_night_sharing[i, 2] * price_grid_night[i]
+                tot_conso_grid[i, 0] = tot_conso_day_sharing[i, 0] + tot_conso_night_sharing[i, 0]
+                tot_conso_grid[i, 1] = tot_conso_day_sharing[i, 1] + tot_conso_night_sharing[i, 1]
+                tot_conso_grid[i, 2] = tot_conso_day_sharing[i, 2] + tot_conso_night_sharing[i, 2]
+                mean_costs_grid_sharing[i] = np.mean(total_cost_grid_sharing[i])
+                
+                
         
-        total_gain_PV_2017 = np.sum(paid_to_PV_2017) +np.sum(injection_2017) * price_PV_to_grid/4
-        total_gain_PV_2018 = np.sum(paid_to_PV_2018)+ np.sum(injection_2018) * price_PV_to_grid/4
-        total_gain_PV_2019 = np.sum(paid_to_PV_2019)+ np.sum(injection_2019) * price_PV_to_grid/4
+        ################################################################################################"
+        # gain with sharing
+        ################################################################################################
          
-        selfconso_2017 = np.sum(repartition_2017, axis=0) /np.sum(consumption_2017, axis=0)
-        selfconso_2018 = np.sum(repartition_2018, axis=0) /np.sum(consumption_2018, axis=0)
-        selfconso_2019 = np.sum(repartition_2019, axis=0) /np.sum(consumption_2019, axis=0)
+        cost_shared_elec = np.zeros((8, 3))
+        cost_shared_elec[:, 0] = np.sum(repartition_2017, axis=0) * price_PV_to_home/4
+        cost_shared_elec[:, 1] = np.sum(repartition_2018, axis=0) * price_PV_to_home/4
+        cost_shared_elec[:, 2] = np.sum(repartition_2019, axis=0) * price_PV_to_home/4
+        cost_shared_elec_mean = np.mean(cost_shared_elec, axis=1)
         
-        print("Total gain without sharing : ", gain_without_sharing_2017, ", ", gain_without_sharing_2018, ", ", gain_without_sharing_2019)
-        print("Total gain with sharing : ", total_gain_PV_2017, ", ", total_gain_PV_2018, ", ", total_gain_PV_2019)
+        total_cost_overall = np.zeros((8, 3))
+        total_cost_overall[:, 0] = total_cost_grid_sharing[:, 0] + cost_shared_elec[:, 0]
+        total_cost_overall[:, 1] = total_cost_grid_sharing[:, 1] + cost_shared_elec[:, 1]
+        total_cost_overall[:, 2] = total_cost_grid_sharing[:, 2] + cost_shared_elec[:, 2]
+        mean_cost_overall = np.mean(total_cost_overall, axis=1)
+        
+        
+        
+        total_gain_from_sharing = np.zeros((3))
+        total_gain_from_sharing[0] = np.sum(cost_shared_elec[:, 0])
+        total_gain_from_sharing[1] = np.sum(cost_shared_elec[:, 1])
+        total_gain_from_sharing[2] = np.sum(cost_shared_elec[:, 2]) 
+        mean_gain_from_sharing = np.mean(total_gain_from_sharing)
+        
+        total_gain_from_injection= np.zeros((3))
+        total_gain_from_injection[0] = np.sum(injection_2017) * price_PV_to_grid/4
+        total_gain_from_injection[1] = np.sum(injection_2018) * price_PV_to_grid/4
+        total_gain_from_injection[2] = np.sum(injection_2019) * price_PV_to_grid/4
+        mean_gain_from_injection = np.mean(total_gain_from_injection)
+        
+        total_gain_pv = np.zeros((3))
+        total_gain_pv[0] = total_gain_from_sharing[0] + total_gain_from_injection[0]
+        total_gain_pv[1] = total_gain_from_sharing[1] + total_gain_from_injection[1]
+        total_gain_pv[2] = total_gain_from_sharing[2] + total_gain_from_injection[2]
+        
+        mean_gain_pv = np.mean(total_gain_pv)
+        
+        proportion_from_pv = np.zeros((8, 3))
+        proportion_from_pv[:,0] = np.sum(repartition_2017, axis=0) / np.sum(consumption_2017, axis=0)
+        proportion_from_pv[:,1] = np.sum(repartition_2018, axis=0) / np.sum(consumption_2018, axis=0)
+        proportion_from_pv[:,2] = np.sum(repartition_2019, axis=0) / np.sum(consumption_2019, axis=0)
+        mean_proportion_from_pv = np.mean(proportion_from_pv, axis=1)
+        print(mean_proportion_from_pv)
+        
+        bar_graph_data_mean_grid = np.zeros((8))
+        bar_graph_data_mean_sharing = np.zeros((8))
+        
+        for i in range(8):
+                bar_graph_data_mean_grid[i] = mean_costs_grid_without_sharing[i]
+                bar_graph_data_mean_sharing[i] = mean_cost_overall[i]+10.11
+        
+        print("Mean cost without sharing : ", bar_graph_data_mean_grid)
+        print("Mean cost with sharing : ", bar_graph_data_mean_sharing)
+                
+        
+        name = ["duplex", "flat_1", "flat_2", "flat_3", "flat_4", "flat_5", "flat_6", "flat_7"]
+        x = np.arange(len(name))
+        width_bar = 0.4  # Largeur des barres
+        # Création des barres
+        plt.bar(x - width_bar/2, bar_graph_data_mean_grid, width_bar, label='Without electricity sharing', color='blue')
+        plt.bar(x + width_bar/2, bar_graph_data_mean_sharing, width_bar, label='With electricity sharing', color='orange')
+        plt.xlabel('Household')
+        plt.ylabel('Cost [€/year]')
+        plt.title('Cost of electricity for each household')
+        plt.xticks(x, name, rotation=45)
+        plt.legend()
+        
+        plt.show()
+        
+        bar_plot_investor_gain = np.zeros((3))
+        bar_plot_investor_gain[1] = mean_gain_without_sharing
+        bar_plot_investor_gain[2] = mean_gain_pv
+        bar_plot_investor_gain[0] = 298.52
+        
+        print("Mean gain without sharing : ", mean_gain_without_sharing)
+        print("Mean gain with sharing : ", mean_gain_pv)
+        bar_plot_investor_name = ["Without sharing", "With sharing", "Minimal return needed"]
+        x = np.arange(len(bar_plot_investor_name))
+        plt.bar(x, bar_plot_investor_gain, width_bar, color='blue')
+        plt.ylabel('€/year') 
+        plt.show()
+        
+
         
         
         
         
         
-#example_1_pricing_evaluation()      
+example_1_pricing_evaluation()      
         
         
     
