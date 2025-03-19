@@ -317,7 +317,7 @@ def example_1_pricing_evaluation():
                 tot_conso_grid[i, 2] = tot_conso_day_sharing[i, 2] + tot_conso_night_sharing[i, 2]
                 mean_costs_grid_sharing[i] = np.mean(total_cost_grid_sharing[i])
                 
-                
+        print("total cost without sharing : ", tot_cost_grid_without_sharing)
         
         ################################################################################################"
         # gain with sharing
@@ -333,6 +333,8 @@ def example_1_pricing_evaluation():
         total_cost_overall[:, 0] = total_cost_grid_sharing[:, 0] + cost_shared_elec[:, 0]
         total_cost_overall[:, 1] = total_cost_grid_sharing[:, 1] + cost_shared_elec[:, 1]
         total_cost_overall[:, 2] = total_cost_grid_sharing[:, 2] + cost_shared_elec[:, 2]
+        print("total cost overall : ", total_cost_overall)
+        
         mean_cost_overall = np.mean(total_cost_overall, axis=1)
         
         
@@ -361,7 +363,7 @@ def example_1_pricing_evaluation():
         proportion_from_pv[:,1] = np.sum(repartition_2018, axis=0) / np.sum(consumption_2018, axis=0)
         proportion_from_pv[:,2] = np.sum(repartition_2019, axis=0) / np.sum(consumption_2019, axis=0)
         mean_proportion_from_pv = np.mean(proportion_from_pv, axis=1)
-        print(mean_proportion_from_pv)
+        print("taux d'auto production : ",mean_proportion_from_pv)
         
         bar_graph_data_mean_grid = np.zeros((8))
         bar_graph_data_mean_sharing = np.zeros((8))
@@ -401,6 +403,26 @@ def example_1_pricing_evaluation():
         plt.ylabel('€/year') 
         plt.show()
         
+        
+        ##############################################################"
+        # Evaluation of the self consumption, and the injection into the grid
+        ##############################################################
+        self_consumption = np.zeros((3))
+        self_injection = np.zeros((3))
+        self_injection[0] = np.sum(injection_2017)/4
+        self_injection[1] = np.sum(injection_2018)/4
+        self_injection[2] = np.sum(injection_2019)/4
+        production_tot = np.zeros((3))
+        production_tot[0] = np.sum(production_2017)
+        production_tot[1] = np.sum(production_2018)
+        production_tot[2] = np.sum(production_2019)
+        for i in range(3) : 
+                self_consumption[i] = (production_tot[i] - self_injection[i])/production_tot[i]
+                
+        print("Self consumption : ", self_consumption)
+        print("Self injection : ", self_injection)
+        print("Production : ", production_tot)
+        
 
         
         
@@ -408,8 +430,23 @@ def example_1_pricing_evaluation():
         
         
 example_1_pricing_evaluation()      
+
+def test_2():
         
+        consumption_2019 = np.loadtxt("total_output/total_conso_2019.csv", delimiter=',')
+        repartition_2019 = np.loadtxt("total_output/repartition_2019.csv", delimiter=',')
         
+        consumption_duplex = consumption_2019[:, 0]
+        repartiton_duplex = repartition_2019[:, 0]
+        x = np.linspace(0, 48,192)
+        plt.plot(x, consumption_duplex[17376:17568], label='Consumption')
+        plt.plot(x, repartiton_duplex[17376:17568], label='Repartition')
+        plt.legend()
+        plt.ylabel('W')
+        plt.xlabel('Hour')
+        plt.show()
+#test_2()
+
     
     
     
