@@ -19,12 +19,14 @@ from household import Household
 params = {
     'input_directory': 'brussels',
     'output_directory': 'test_directory_brussels',
-    "PEB" : "D"
+    "PEB" : "D",
+    "heating_type" : "only-electric",
 }
 
 def test_load_temperature():
-    params["T_ext_threshold"] = 10
+    params["T_ext_threshold"] = 12
     household = Household(params)
+    print("power : ", household.annual_heating_value_m2)
     household.load_temperature_data()
     for i in range(365):
         household.electric_heating()
@@ -35,10 +37,17 @@ def test_load_temperature():
     plt.plot(first_year)
     plt.show()
     on = np.sum(household.load_heating, axis=0)/(4000 * household.flat_area)
+    is_on = np.zeros(3)
+    for i in range(len(household.load_heating[0])):
+        for j in range(len(household.load_heating)):
+            if household.load_heating[j][i] > 0:
+                is_on[i] += 1
+       
     
     print(on)
+    print(is_on)
     
-#test_load_temperature()
+test_load_temperature()
     
 def test_cooking_this_day():
     household = Household(params)

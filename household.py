@@ -46,6 +46,7 @@ class Household:
                 - heating_efficiency (float): the efficiency or COP of the heating system, default is 1 
                 - Appartement_area (int): the area of the flat in m², -1 if the area is unknown
                 - T_ext_threshold (float): the threshold outdoor temperature for the heating to be turned on, default is 15°C 
+                - T_ext_threshold_night (float): the threshold outdoor temperature for the heating to be turned on during the night, default is 10°C
                 - number_cold_sources (int): the number of cold sources in the household (frige, freezer, etc), -1 if the number is unknown
                 - have_washing_machine (bool): True if the household has a washing machine, False otherwise
                 - washing_frequency (str): the frequency of washing, can be 'low', 'medium' or 'high', -1 if the frequency is unknown
@@ -137,7 +138,8 @@ class Household:
             self.heating_is_elec = False 
         self.temperature_array = self.load_temperature_data() 
         self.n_year_temp_data = len(self.temperature_array[0])
-        self.T_ext_threshold = params.get("T_ext_threshold", 15)
+        self.T_ext_threshold = params.get("T_ext_threshold", 12)
+        self.T_ext_threshold_night = params.get("T_ext_threshold_night", 7)
         self.load_heating = np.zeros((35040, self.n_year_temp_data))
         self.total_consumption = np.zeros((35040, self.n_year_temp_data)) 
         if self.heating_is_elec:
@@ -179,8 +181,8 @@ class Household:
                     self.flat_area = np.random.randint(162, 216)  # mean = 189
             
             self.heating_efficiency = params.get('heating_efficiency', 1)
-            self.power_heating = self.flat_area * self.annual_heating_value_m2 *1000 / (self.heating_efficiency * 4198.4)  # Total energy / equivalent heating hours (mean)
-                
+            self.power_heating = self.flat_area * self.annual_heating_value_m2 *1000 / (self.heating_efficiency * 4092*0.82)  # Total energy / equivalent heating hours (mean)
+                #4198.4
         
         self.number_cold_sources = params.get('number_cold_sources', -1)
         if self.number_cold_sources == -1:
@@ -428,7 +430,7 @@ class Household:
         derived from the ademe load profile 
         
         As the temperature data are available for several years, the function will compute the heating consumption for each year
-        """
+        
         if self.heating_is_elec :
             hours_begin = (self.day -1 ) * 24
             heating_is_on = []
@@ -451,6 +453,25 @@ class Household:
                 it = (self.day-1) * 24 * 4 + i
                 hours = i // 4
                 self.load_heating[it] = self.power_heating * hourly_weight[hours] * heating_is_on
+        """       
+        if self.heating_is_elec : 
+            hourly_weight = np.array([0.725,0.7,0.775,0.775,0.8,0.95,0.95,1,1,0.98,0.9,0.8,0.8,0.72,0.7,0.68,0.7,0.775,0.875,0.9,0.9,0.8,0.75,0.725])
+            for i in range(24*4):
+                is_on = np.zeros(self.n_year_temp_data)
+                hours = i // 4
+                it = (self.day-1) * 24 * 4 + i
+
+                hour = (self.day -1 ) * 24 + hours
+                for j in range(self.n_year_temp_data):
+                    if hours < 7 or hours > 21:
+                        if self.temperature_array[hour][j] < self.T_ext_threshold_night:
+                            is_on[j] = 1
+                    else:
+                        if self.temperature_array[hour][j] < self.T_ext_threshold:
+                            is_on[j] = 1
+                self.load_heating[it] = self.power_heating * hourly_weight[hours] * is_on   
+                    
+                
         
     
     def cold_sources(self):
