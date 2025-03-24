@@ -47,22 +47,27 @@ def test_load_temperature():
     print(on)
     print(is_on)
     
-test_load_temperature()
+#test_load_temperature()
     
 def test_cooking_this_day():
+    params["cooking activity"]  = "medium"
     household = Household(params)
+    print(household.total_conso_cooking)
     for i in range(365):
         household.cooking_this_day()
         household.day +=1 
     
-    #plt.plot(household.consumption[0:192])
-    #plt.show()
+    plt.plot(household.consumption[0:672])
+    plt.show()
     
     per_15min = np.zeros(96)
     for i in range(365):
         per_15min += household.consumption[96*i:96*(i+1)]
     per_15min = per_15min/365
-    plt.plot(per_15min)
+    hours = np.linspace(0, 24, 24*4)
+    sns.lineplot(x=hours, y=per_15min)
+    plt.xlabel("hours")
+    plt.ylabel("Mean power (W)")
     plt.show()
     
     total = 0
@@ -71,7 +76,7 @@ def test_cooking_this_day():
     print(total/1000)
         
     
-#test_cooking_this_day()
+test_cooking_this_day()
 
 def test_electric_water_heater():
     params['wh_capacity'] = 'medium'
@@ -177,4 +182,4 @@ def test_total_conso():
     
     plt.plot(household.total_consumption[0:672])
     plt.show()
-test_total_conso()
+#test_total_conso()

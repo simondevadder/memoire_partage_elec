@@ -34,6 +34,10 @@ class Household:
             params (dictionary): a dictionary containing the parameters of the household, must contain the following
                 - input_directory (str): the directory where the input data is stored
                 - output_directory (str): the directory where the output data will be stored
+                - cooking activity (str) : the intensity of cooking activity. If low usage of oven, stove..., write low (up to 200kWh/year)
+                                                                            medium (between 200 and 450kWh/year) : normal usage of oven, stove...
+                                                                            high (between 450 and 800kWh/year) : high usage of oven, stove... several
+                                                                            other applyances
                 - wh_type (str): the type of water heater, can be 'Joules', 'thermodynamic' or 'non-electric'
                 - wh_night (bool): True if the water heater is only used at night, False otherwise (the water heater is used during the day)
                 - wh_capacity (str): the capacity of the water heater 'low' for <149l, 'medium' for 150<=c<201l, 'high' for >201l, -1 if the capacity is unknown
@@ -108,6 +112,22 @@ class Household:
         self.is_cooking = False
         self.time_cooking = 0
         self.time_not_cooking = 0
+        self.frequency_cooking = params.get("cooking activity", -1)
+        if self.frequency_cooking == -1:
+            r = np.random.rand()
+            if r < 0.37:
+                self.frequency_cooking = 'low'
+            elif r < 0.83:
+                self.frequency_cooking = 'medium'
+            else:
+                self.frequency_cooking = 'high'
+        if self.frequency_cooking == 'low':
+            self.total_conso_cooking = np.random.randint(0, 200000)  # between 0 and 200 kWh per year
+        elif self.frequency_cooking == 'medium':
+            self.total_conso_cooking = np.random.randint(200000, 450000)  # between 200 and 450 kWh per year
+        else:
+            self.total_conso_cooking = np.random.randint(450000, 800000)  # between 450 and 800 kWh per year
+        
         
         self.wh_type = params.get('wh_type', 'Joules')
         self.wh_is_electric = True
@@ -344,10 +364,7 @@ class Household:
         ### Breakfast 
         breakfast_beginning_hour = np.random.randint(24, 37)  # between 6h and 9h
         breakfast_duration = np.random.randint(1, 3)
-        if np.random.rand() < 0.8:
-            breakfast_wh = np.random.random() * 150
-        else:
-            breakfast_wh = np.random.random() * 500   # between 0 and 500 Wh
+        breakfast_wh = np.random.randint(0, int(self.total_conso_cooking * 0.1 * 2 /365)) # 10% of power for breakfast, 365 breakfast per year
         breakfast_power = breakfast_wh*4 / breakfast_duration # in W 
         
         breakfast_index_begin = (self.day - 1) * 24 * 4 + breakfast_beginning_hour
@@ -362,9 +379,9 @@ class Household:
             lunch_beginning_hour = np.random.randint(46, 57)  # between 11h30 and 14h
             lunch_duration = np.random.randint(1, 4)
             if np.random.rand() < 0.8:
-                lunch_wh = np.random.random() * 200
+                lunch_wh = 0.2 * 0.2 * self.total_conso_cooking / (365 * 0.66)  # 30% of power for lunch, 66% of the year  
             else:
-                lunch_wh = np.random.random() * 1000  # between 0 and 1000 Wh
+                lunch_wh = 4.2 * 0.2 * self.total_conso_cooking / (365 * 0.66)  
             lunch_power = lunch_wh*4 / lunch_duration # in W
             
             lunch_index_begin = (self.day - 1) * 24 * 4 + lunch_beginning_hour
@@ -376,7 +393,8 @@ class Household:
         if supper : 
             supper_beginning_hour = np.random.randint(72, 87)  # between 18h and 21h30
             supper_duration = np.random.randint(1, 7)
-            supper_wh = 200 + np.random.random() * 1000
+            p = self.total_conso_cooking * 0.7  /(365 * 0.86)  # 60% of power for supper, 86% of the year
+            supper_wh = np.random.randint(int(p/2), int(3*p/2)) # 60% of power for supper, 365 supper per year
             supper_power = supper_wh*4 / supper_duration
             
             supper_index_begin = (self.day - 1) * 24 * 4 + supper_beginning_hour
