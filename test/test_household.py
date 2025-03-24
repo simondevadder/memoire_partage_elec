@@ -19,13 +19,27 @@ from household import Household
 params = {
     'input_directory': 'brussels',
     'output_directory': 'test_directory_brussels',
-    "PEB" : "D",
+    "PEB" : "A",
     "heating_type" : "only-electric",
 }
 
 def test_load_temperature():
     params["T_ext_threshold"] = 12
+    params["appartment_area"] = 100
+    params["heating_efficiency"] = 2.3
+    
     household = Household(params)
+    #print(household.temperature_array[1][0])
+    thershold_day = np.ones(365*24)*12
+    thershold_night = np.ones(365*24)*7
+    days = np.linspace(0, 365, 365*24)
+    plt.plot(days, household.temperature_array[:,0], label="Température extérieure (2017)")
+    plt.plot(days, thershold_day, label="Température limite jour")
+    plt.plot(days, thershold_night, label="Température limite nuit")
+    plt.xlabel("Jours")
+    plt.ylabel("Température (°C)")
+    plt.legend()
+    plt.show()
     print("power : ", household.annual_heating_value_m2)
     household.load_temperature_data()
     for i in range(365):
@@ -33,8 +47,28 @@ def test_load_temperature():
         household.day +=1
     first_year = np.zeros(192)
     for i in range(192):
-        first_year[i] = household.load_heating[i][0]
-    plt.plot(first_year)
+        first_year[i] = household.load_heating[192+i][0]
+    hours = np.linspace(0, 48, 48*4)
+    #sns.lineplot(x=hours, y=first_year)
+   # plt.show()
+    
+    heating = np.zeros(365)
+    for i in range(365):
+        heating[i] = np.sum(household.load_heating[i*96:(i+1)*96, 0])/4000
+    day = np.linspace(0, 365, 365)
+    sns.lineplot(x=day, y=heating)
+    plt.xlabel("Jours")
+    plt.ylabel("Energie (kWh)")
+    plt.show()
+    
+    time_on = np.zeros(365*24*4)
+    for i in range(35040):
+        if household.load_heating[i][0] > 0:
+            time_on[i] = 1
+    on_per_day = np.zeros(365)
+    for i in range(365):
+        on_per_day[i] = np.sum(time_on[i*96:(i+1)*96])
+    plt.plot(on_per_day)
     plt.show()
     on = np.sum(household.load_heating, axis=0)/(4000 * household.flat_area)
     is_on = np.zeros(3)
@@ -47,7 +81,7 @@ def test_load_temperature():
     print(on)
     print(is_on)
     
-#test_load_temperature()
+test_load_temperature()
     
 def test_cooking_this_day():
     params["cooking activity"]  = "medium"
@@ -56,8 +90,10 @@ def test_cooking_this_day():
     for i in range(365):
         household.cooking_this_day()
         household.day +=1 
-    
-    plt.plot(household.consumption[0:672])
+    time = np.linspace(0, 48, 48*4)
+    sns.lineplot(x=time, y=household.consumption[0:192])
+    plt.xlabel("Hours")
+    plt.ylabel("power (W)")
     plt.show()
     
     per_15min = np.zeros(96)
@@ -76,7 +112,7 @@ def test_cooking_this_day():
     print(total/1000)
         
     
-test_cooking_this_day()
+#test_cooking_this_day()
 
 def test_electric_water_heater():
     params['wh_capacity'] = 'medium'
