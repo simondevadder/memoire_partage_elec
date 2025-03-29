@@ -214,8 +214,9 @@ class Household:
             self.cold_power = np.zeros(self.number_cold_sources)
             for i in range (self.number_cold_sources):
                 if i ==1:
-                    if np.random.rand() < 0.045:
-                        self.cold_power[i] = 85  #750kWh/year
+                    r = np.random.rand()
+                    if r < 0.25:
+                        self.cold_power[i] = np.random.randint(11,29)  #100 to 250kWh/year
                     else:
                         self.cold_power[i] = np.random.randint(22, 57)     #between 200 and 500 kWh/year
                 else:
@@ -228,9 +229,9 @@ class Household:
         self.washing_frequency = params.get('washing_frequency', -1)
         if self.washing_frequency == -1:
             r = np.random.rand()
-            if r < 0.28:  #up to 2 times a week
+            if r < 0.37:  #up to 2 times a week
                 self.washing_frequency = "low"
-            elif r < 0.47:  #between 3 and 5 times a week
+            elif r < 0.82:  #between 3 and 5 times a week
                 self.washing_frequency = "medium"
             else:  #between 6 and 14 times a week
                 self.washing_frequency = "high"
@@ -503,8 +504,8 @@ class Household:
         """
         cold_index_begin = (self.day - 1) * 24 * 4 
         cold_index_end = cold_index_begin + 96
-        summer_factor = 1.2
-        winter_factor = 0.9
+        summer_factor = 1.15
+        winter_factor = 0.88   #Those coeff have been chosen so that the total consumption stays the same 
         if self.day < 90 or self.day > 304 :  #between november and march
             for i in range(self.number_cold_sources):
                 self.consumption[cold_index_begin:cold_index_end] += self.cold_power[i] * winter_factor
@@ -638,13 +639,13 @@ class Household:
                                 dryer_is_active = False 
                     if dryer_is_active:
                         if self.dryer_type == 'heat-pump':
-                            dryer_power = 416
+                            dryer_power = 430
                             dryer_duration = 6 + np.random.randint(0, 5)  # between 1h30 and 2h30 
                         elif self.dryer_type == 'condensation':
-                            dryer_power = 1112
+                            dryer_power = 1088
                             dryer_duration = 4 + np.random.randint(0, 5)  # between 1h and 2h
                         else:
-                            dryer_power = 1215
+                            dryer_power = 1181
                             dryer_duration = 5 + np.random.randint(0, 5)  # between 1h15 and 2h15
                         if self.dryer_intelligence == False : 
                             dryer_index_begin = int(cycle_end_timestep + np.random.randint(0, 5))  # up to 1h after end of washing machine cycle
