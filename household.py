@@ -133,7 +133,11 @@ class Household:
         self.wh_is_electric = True
         if self.wh_type == 'non-electric':
             self.wh_is_electric = False
+        self.wh_intelligence = params.get('wh_intelligence', False)
         self.wh_night = params.get('wh_night', True)
+        if self.wh_intelligence :
+            self.wh_hours_begin = params.get('wh_hours_begin', -1)
+            
         self.wh_capacity = params.get('wh_capacity', -1)
         if self.wh_capacity == -1:
             r = np.random.rand()
@@ -411,12 +415,22 @@ class Household:
         """
         
         if self.wh_is_electric : 
-            if self.wh_night : 
-                wh_beginning_hour = np.random.randint(0, 33)
-                if wh_beginning_hour > 21:
-                    wh_beginning_hour = 21*4+(wh_beginning_hour-21)
-            else :
-                wh_beginning_hour = np.random.randint(32,64)
+            if not self.wh_intelligence :
+                if self.wh_night : 
+                    wh_beginning_hour = np.random.randint(0, 33)
+                    if wh_beginning_hour > 21:
+                        wh_beginning_hour = 21*4+(wh_beginning_hour-21)
+                else :
+                    wh_beginning_hour = np.random.randint(32,64)
+            else : 
+                if self.wh_hours_begin == -1:
+                    proba_wh=[3.8,10.6,14.9,17,17.9,16.2,11.9,7.7]  # proba taken with the power generated on a east west surface in winter
+                    proba_wh = np.array(proba_wh) / sum(proba_wh)
+                    taken = np.random.choice(range(8), p=proba_wh)
+                    quartil = np.random.randint(0, 4)    
+                    wh_beginning_hour = 8*4 +taken * 4 + quartil  #start at 9am (3.8%) until 4pm
+                else:
+                    wh_beginning_hour = int(self.wh_hours_begin*4)
             
             wh_duration = np.random.randint(6, 11) # entre 1h30 et 2h30
             if self.wh_type == 'Joules':
