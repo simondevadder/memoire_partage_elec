@@ -373,18 +373,22 @@ class EnergyCommunity:
         day_number = pd.read_csv(self.directory_output + '/day.csv', header=None)
         hour_number = pd.read_csv(self.directory_output + '/hour.csv', header=None)
         
-        production = np.zeros((8760,self.n_years))
-        G = np.zeros((8760,self.n_years))
+        self.total_production = np.zeros((8760,self.n_years))
+        self.total_G = np.zeros((8760,self.n_years))
         for i in range(8760):
             for j in range(self.n_years):
-                production[i][j], G[i][j] = self.func_compute_production_step(dhi.iloc[i, j], dni.iloc[i, j], temperature.iloc[i, j], day_number.iloc[i, j],hour_number.iloc[i, j])
-                
-                
+                self.total_production[i][j], self.total_G[i][j] = self.func_compute_production_step(dhi.iloc[i, j], dni.iloc[i, j], temperature.iloc[i, j], day_number.iloc[i, j],hour_number.iloc[i, j])
+        
+        return self.total_production, self.total_G
+      
+    def save_production(self):
+        """Save the production of the community for each time step of each year in a new directory using func_compute_total_production
+        """         
         if not os.path.exists(self.directory_output):
             os.makedirs(self.directory_output)
             
-        np.savetxt(self.directory_output + '/production.csv', production, delimiter=',', fmt="%.1f")
-        np.savetxt(self.directory_output + '/G.csv', G, delimiter=',', fmt="%.1f")
+        np.savetxt(self.directory_output + '/production.csv', self.total_production, delimiter=',', fmt="%.1f")
+        np.savetxt(self.directory_output + '/G.csv', self.total_G, delimiter=',', fmt="%.1f")
         
         print('production saved')
         

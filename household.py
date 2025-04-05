@@ -41,6 +41,8 @@ class Household:
                 - wh_type (str): the type of water heater, can be 'Joules', 'thermodynamic' or 'non-electric'
                 - wh_night (bool): True if the water heater is only used at night, False otherwise (the water heater is used during the day)
                 - wh_capacity (str): the capacity of the water heater 'low' for <149l, 'medium' for 150<=c<201l, 'high' for >201l, -1 if the capacity is unknown
+                - wh_intelligence (bool): True if the water heater is intelligent, False otherwise
+                - wh_hours_begin (int): if intelligence, the hour of the day when the water heater is turned on, -1 if the hour is unknown or does not apply
                 - heating_type (str): the type of heating, can be 'non-electric', 'only-electric', 'mixed' : 
                                         non-electric : heating is not electric
                                         only-electric : heating is electric
@@ -148,18 +150,7 @@ class Household:
             else:
                 self.wh_capacity = 'low'
                 
-        self.heating_is_elec = True
-        self.heating_type = params.get('heating_type', 'not_specified')
-        if self.heating_type == 'not_specified':
-            r = np.random.rand()
-            if r < 0.33:
-                self.heating_type = 'non-electric'
-            elif r<0.66:
-                self.heating_type = 'only-electric'
-            else:
-                self.heating_type = 'mixed'
-        if self.heating_type == 'non-electric':
-            self.heating_is_elec = False 
+        self.heating_is_elec = params.get('heating_is_elec', False)
         self.temperature_array = self.load_temperature_data() 
         self.n_year_temp_data = len(self.temperature_array[0])
         self.T_ext_threshold = params.get("T_ext_threshold", 12)
