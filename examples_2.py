@@ -66,7 +66,7 @@ def example_1():
         grid_price_day_params=[0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36]
         grid_price_night_params=[0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29]
         wh_intelligence_params = True
-        wh_hour_mode = "fixed"
+        wh_hour_mode = "perfect_knowledge"
         
         params = {
                 "input_directory": input_directory,
@@ -92,7 +92,11 @@ def example_1():
         multi = MultiHousehold(params, enercom)
         multi.run()
         multi.repartition_elec()
+        multi.compute_metrics()
+        multi.pricing()
         multi.save_results()
+
+example_1()
         
         
         

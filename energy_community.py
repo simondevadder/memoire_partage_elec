@@ -130,7 +130,7 @@ class EnergyCommunity:
             self.compute_price= True
         
         if self.interest_rate != 0 :
-            self.annualized_investment_cost = self.investment_cost * self.interest_rate / (1-(1/(1+self.interest_rate))^self.estimated_lifetime)
+            self.annualized_investment_cost = self.investment_cost * self.interest_rate / (1-(1/(1+self.interest_rate))**self.estimated_lifetime)
         else : 
             self.annualized_investment_cost = self.investment_cost / self.estimated_lifetime
         

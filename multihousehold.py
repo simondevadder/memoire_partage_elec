@@ -120,12 +120,11 @@ class MultiHousehold:
                 "cooking": self.cooking_params[i],
                 "wh_type": self.wh_type_params[i],
                 "wh_capacity": self.wh_capacity_params[i],
-                "wh_intelligence": self.wh_intelligence_params[i],
+                "wh_intelligence": self.wh_intelligence_params,
                 "wh_night": self.wh_night_params[i],
                 "heating_is_elec": self.heating_is_elec_params[i],
                 "T_ext_th": self.T_ext_th_params[i],
                 "T_ext_th_night": self.T_ext_th_night_params[i],
-                "PEB": self.pEB_params[i],
                 "heating_efficiency": self.heating_eff_params[i],
                 "n_cold_sources": self.n_cold_source_params[i],
                 "have_washing_machine": self.have_wm_params[i],
@@ -142,6 +141,8 @@ class MultiHousehold:
                 "grid_price_day": self.grid_price_day_params[i],
                 "grid_price_night": self.grid_price_night_params[i]
             }
+            if self.pEB_params is not None:
+                params["PEB"] = self.pEB_params[i]
             self.households_array.append(Household(params))
         
         self.households_array = np.array(self.households_array)
@@ -189,7 +190,10 @@ class MultiHousehold:
                 household.day += 1
             
             for year in range(household.n_year_temp_data):
-                household.total_consumption[:, year] = household.consumption + household.load_heating[:, year] + household.load_wh[:, year]
+                if household.wh_multiyears:
+                    household.total_consumption[:, year] = household.consumption + household.load_heating[:, year] + household.load_wh[:, year]
+                else :
+                    household.total_consumption[:, year] = household.consumption + household.load_heating[:,year]
             
             self.total_electric_consumption[:, index, :] = household.total_consumption
             index += 1
@@ -228,12 +232,12 @@ class MultiHousehold:
        
         
         for year in range(self.n_years):
-            self.injection_year[year] = np.sum(self.total_injection[:, year])
+            self.injection_year[year] = np.sum(self.total_injection[:, year])*0.25
             self.production_year[year] = np.sum(self.production[:, year])
-            self.self_consumption[year] = 1 - np.sum(self.total_injection[:,year]) / np.sum(self.production[:, year])
+            self.self_consumption[year] =np.sum(self.total_repartition[:,:,year])*0.25 / np.sum(self.production[:, year])
             for i in range(self.n_households):
-                self.consumption_year[i, year] = np.sum(self.total_electric_consumption[:, i, year])
-                self.repartition_year[i, year] = np.sum(self.total_repartition[:, i, year])
+                self.consumption_year[i, year] = np.sum(self.total_electric_consumption[:, i, year])*0.25
+                self.repartition_year[i, year] = np.sum(self.total_repartition[:, i, year])*0.25
                 self.self_sufficiency[i, year] = np.sum(self.total_repartition[:, i, year]) / np.sum(self.total_electric_consumption[:, i, year])
                 
     
@@ -257,22 +261,22 @@ class MultiHousehold:
                 quart_sem = i % 672
                 quart_day = i % 96
                 if quart_sem >=478 : 
-                    self.total_conso_night[:, year] += self.total_electric_consumption[quart_sem, :, year] * 0.25
-                    self.total_conso_night_with_pv[:, year] += self.total_from_grid[quart_sem, :, year] * 0.25
+                    self.total_conso_night[:, year] += self.total_electric_consumption[quart_sem, :, year] * 0.25 *0.001
+                    self.total_conso_night_with_pv[:, year] += self.total_from_grid[quart_sem, :, year] * 0.25 * 0.001
                 elif quart_day <= 28 or quart_day >= 88 :
-                    self.total_conso_night[:, year] += self.total_electric_consumption[quart_sem, :, year] * 0.25
-                    self.total_conso_night_with_pv[:, year] += self.total_from_grid[quart_sem, :, year] * 0.25
+                    self.total_conso_night[:, year] += self.total_electric_consumption[quart_sem, :, year] * 0.25 * 0.001
+                    self.total_conso_night_with_pv[:, year] += self.total_from_grid[quart_sem, :, year] * 0.25 * 0.001
                 else :
-                    self.total_conso_day[:, year] += self.total_electric_consumption[quart_sem, :, year] * 0.25
-                    self.total_conso_day_with_pv[:, year] += self.total_from_grid[quart_sem, :, year] * 0.25
-            self.total_conso_from_pv[:, year] = self.total_repartition[:, :, year].sum(axis=0) *0.25
+                    self.total_conso_day[:, year] += self.total_electric_consumption[quart_sem, :, year] * 0.25 * 0.001
+                    self.total_conso_day_with_pv[:, year] += self.total_from_grid[quart_sem, :, year] * 0.25 * 0.001
+            self.total_conso_from_pv[:, year] = self.total_repartition[:, :, year].sum(axis=0) *0.25 * 0.001
             
             for i in range(self.n_households):
                 self.total_price_without_pv[i, year] = self.total_conso_night[i, year] * self.grid_price_night_params[i] + self.total_conso_day[i, year] * self.grid_price_day_params[i]
                 self.total_price_with_pv[i, year] = self.total_conso_night_with_pv[i, year] * self.grid_price_night_params[i] + self.total_conso_day_with_pv[i, year] * self.grid_price_day_params[i]
-                self.total_revenue_without_pv[year] += self.total_injection[i, year] * self.enercom.grid_injection_price
-                self.total_revenue_with_pv[i, year] += self.total_conso_from_pv[i, year] * self.enercom.sharing_price
-                
+                self.total_revenue_with_pv[year] += self.total_conso_from_pv[i, year] * self.enercom.sharing_price 
+            self.total_revenue_without_pv[year] += self.production_year[year] * self.enercom.grid_injection_price * 0.001
+            self.total_revenue_with_pv[year] += self.injection_year[year] * self.enercom.grid_injection_price * 0.001
         self.enercom.compute_minimal_revenue()
         self.enercom.compute_gc_gain()
         self.annualized_investment_cost = self.enercom.annualized_investment_cost
@@ -311,46 +315,55 @@ class MultiHousehold:
             'Bills with sharing': self.total_price_with_pv,
             'revenue without sharing': self.total_revenue_without_pv,
             'revenue with sharing': self.total_revenue_with_pv,
-            'self consumption': self.self_consumption,
+            'self consumption': self.self_consumption.T,
             'self sufficiency': self.self_sufficiency,
-            'total injection': self.injection_year,
-            'total production': self.production_year,
+            'total injection': self.injection_year.T,
+            'total production': self.production_year.T,
             'total consumption': self.consumption_year,
             'total repartition': self.repartition_year,
         }
 
         # Créer un writer Excel
-        with pd.ExcelWriter(os.path.join(self.output_dir, "main_results.xslx"), engine='xlsxwriter') as writer:
-            # Créer une feuille Excel
+        max_rows = max(arr.shape[0] for arr in arrays.values())
+
+        with pd.ExcelWriter(os.path.join(self.output_dir, "main_results.xlsx"), engine='xlsxwriter') as writer:
             workbook  = writer.book
             worksheet = workbook.add_worksheet('Feuille1')
             writer.sheets['Feuille1'] = worksheet
 
-            col_start = 0  # Position de départ en colonne
+            col_start = 0
 
             for name, arr in arrays.items():
-                df = pd.DataFrame(arr, columns=['A', 'B', 'C'])
+                # On crée des noms de colonnes par défaut (A, B, C, ...)
+                nb_col = arr.shape[1] if len(arr.shape) > 1 else 1
+                col_names = [chr(65 + i) for i in range(nb_col)]  # 'A', 'B', 'C', ...
 
-                # Écrire le nom de l'array en haut
+                # Assurer que arr est 2D
+                arr = arr.reshape(-1, nb_col)
+
+                df = pd.DataFrame(arr, columns=col_names)
+                df = df.reindex(range(max_rows))  # Pour aligner les lignes
+
+                # Écrire le nom de l'array au-dessus
                 worksheet.write(0, col_start, name)
 
-                # Écrire les en-têtes de colonnes (A, B, C)
+                # En-têtes de colonnes
                 for i, col_name in enumerate(df.columns):
                     worksheet.write(1, col_start + i, col_name)
 
-                # Écrire les données à partir de la ligne 2 (index 2)
-                for row_idx, row in enumerate(df.values):
-                    for col_idx, val in enumerate(row):
-                        worksheet.write(row_idx + 2, col_start + col_idx, val)
+                # Les données
+                for row_idx in range(df.shape[0]):
+                    for col_idx in range(df.shape[1]):
+                        val = df.iat[row_idx, col_idx]
+                        if pd.notna(val):  # Évite d’écrire des NaN
+                            worksheet.write(row_idx + 2, col_start + col_idx, val)
 
-                # Avancer la position de départ pour le prochain array
-                col_start += df.shape[1] + 1  # +1 pour une colonne vide entre les blocs
-
-                            
+                col_start += df.shape[1] + 1  # Espace entre blocs
+                                    
+                                
                         
+                    
                 
             
-        
-      
-        
+        # Enregistrer le fichier Excel    
         
