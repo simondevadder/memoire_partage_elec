@@ -42,7 +42,8 @@ class Household:
                 - wh_night (bool): True if the water heater is only used at night, False otherwise (the water heater is used during the day)
                 - wh_capacity (str): the capacity of the water heater 'low' for <149l, 'medium' for 150<=c<201l, 'high' for >201l, -1 if the capacity is unknown
                 - wh_intelligence (bool): True if the water heater is intelligent, False otherwise
-                - wh_hours_begin (int): if intelligence, the hour of the day when the water heater is turned on, -1 if the hour is unknown or does not apply
+                - wh_multiyears (bool): True if the consumption of wh depends on the weather (pv production), False otherwise
+                - wh_hours_begin (int or array of int): if intelligence, the hour of the day when the water heater is turned on, -1 if the hour is unknown or does not apply
                 - heating_type (str): the type of heating, can be 'non-electric', 'only-electric', 'mixed' : 
                                         non-electric : heating is not electric
                                         only-electric : heating is electric
@@ -102,9 +103,9 @@ class Household:
         self.time = 0
         self.hour = 0
         self.day = 1
-        self.consumption = np.zeros((35040))  # To be changed, 35 040 is the number of time step in a year, 1 is the number of columns
+        self.consumption = np.zeros((35040))  # To be changed, 35 040 is the number of time step in a year, 1 is the number of columns, heating not taken into account
+                                                 # wh neither is multiyear
         self.cooking = np.zeros((35040))
-        self.wh = np.zeros((35040))
         self.cold = np.zeros((35040))
         self.washing_usage = np.zeros((35040))
         self.other_power = np.zeros((35040))
@@ -136,9 +137,14 @@ class Household:
         if self.wh_type == 'non-electric':
             self.wh_is_electric = False
         self.wh_intelligence = params.get('wh_intelligence', False)
+        self.wh_multiyears = params.get('wh_multiyears', False)
+        if self.wh_multiyears:
+            self.load_wh = np.zeros((35040, self.n_year_temp_data))
+        else:
+            self.load_wh = np.zeros((35040))
         self.wh_night = params.get('wh_night', True)
         if self.wh_intelligence :
-            self.wh_hours_begin = params.get('wh_hours_begin', -1)
+            self.wh_hours_begin = params.get('wh_hours_begin', -1)   # Array of int if multiyear (one per year)
             
         self.wh_capacity = params.get('wh_capacity', -1)
         if self.wh_capacity == -1:
@@ -421,7 +427,7 @@ class Household:
                     quartil = np.random.randint(0, 4)    
                     wh_beginning_hour = 8*4 +taken * 4 + quartil  #start at 9am (3.8%) until 4pm
                 else:
-                    wh_beginning_hour = int(self.wh_hours_begin*4)
+                        wh_beginning_hour = int(self.wh_hours_begin*4)  # if wh_multiyear, wh_beginning_hour will be an array
             
             wh_duration = np.random.randint(6, 11) # entre 1h30 et 2h30
             if self.wh_type == 'Joules':
@@ -439,10 +445,14 @@ class Household:
             else :
                 wh_duration  = int(wh_duration * 0.65)
                 
-            wh_index_begin = (self.day - 1) * 24 * 4 + wh_beginning_hour
-            wh_index_end = wh_index_begin + wh_duration
-            self.consumption[wh_index_begin:wh_index_end] += wh_power
-            self.wh[wh_index_begin:wh_index_end] += wh_power
+            wh_index_begin = (self.day - 1) * 24 * 4 + wh_beginning_hour  # will be an array if multiyear
+            wh_index_end = wh_index_begin + wh_duration    # will be an array if multiyear
+            if not self.wh_multiyears:
+                self.consumption[wh_index_begin:wh_index_end] += wh_power
+                self.load_wh[wh_index_begin:wh_index_end] += wh_power
+            else:
+                for i in range(self.n_year_temp_data):
+                    self.load_wh[wh_index_begin[i]:wh_index_end[i], i] += wh_power
     
     
     def electric_heating(self):
@@ -743,7 +753,7 @@ class Household:
             self.day += 1
         
         for year in range(self.n_year_temp_data):
-            self.total_consumption[:, year] = self.consumption + self.load_heating[:, year]
+            self.total_consumption[:, year] = self.consumption + self.load_heating[:, year] + self.load_wh[:, year]
             
         
     def plot_consumption(self, args, plot_day=False, plot_week=False, plot_to_from=False, plot_whole_year=False):

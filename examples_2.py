@@ -1,0 +1,100 @@
+### Master thesis, Simon De Vaddern electricity sharing in multi units buildings
+###  example file 2, containing examples with mutlihousehold class
+
+import numpy as np
+import pandas as pd
+from datetime import date
+import sys
+import os
+from matplotlib import pyplot as plt
+import seaborn as sns
+from energy_community import EnergyCommunity
+from household import Household
+from multihousehold import MultiHousehold
+
+
+def example_1():
+        """ This example shows how to run the model with an example building 
+        The building analysed has the fllowing features : 
+        PV : 2 sets : 
+                - orientation = 80, inclinaison = 40, surface = 122.5
+                - orientation = 260, inclinaison = 40, surface = 103
+
+        flats : 1 duplex 4 rooms and 7 flats 2 rooms
+                - duplex  : 250m^2, PEB E, gas heating, familly of 2 parents and 2 children
+                                wh_type = elec
+                                wh_capacity = high
+                                heating_type = non-electric
+                                number_cold_source = 2
+                                have_washing_machine = True
+                                washing_frequency = medium
+                                have_dryer = True
+                                dryer_usage = medium
+                                dryer_type = condensation
+                        have_dishwasher = True
+                        dishwasher_frequency = high
+                - flats : 7 flats 2 rooms, 95m^2, PEB E, gas heating
+                                wh_type = elec
+                                wh_capacity = medium
+                                heating_type = non-electric
+                                number_cold_source = 1
+                                have_washing_machine = True, one False
+                                washing_frequency = 4 low, 2 medium, 1 null
+                                have_dryer = 1 True (one of the medium), 6 False
+                                dryer_type = condensation, or None
+                        have_dishwasher = 4 True, 3 False
+                        dishwasher_frequency = 2 medium, 2 low
+        """
+        
+        pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_out", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
+                        "n_households" : 8, "key" : "hybrid", "PV_inclination": [40], "PV_orientation" : [260], "PV_area" : [77], "PV_efficiency" : 0.16, "PV_module_size": [1.6, 0.99, 0.008],
+                        "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 18000, "estimated_lifetime" : 25, "interest_rate" : 0.03 }
+
+
+        input_directory = "pv_out"
+        output_directory = "example_multi"
+        n_households = 8
+        cooking_params = ["high", "medium", "low", "low", "medium", "low", "high", "medium"]
+        wh_capacity_params = ["high", "medium", "medium", "medium", "medium", "medium", "medium", "medium"]
+        n_cold_source_params = [2, 1, 1, 1, 1, 1, 1, 1]
+        wm_frequency_params = ["medium", "medium", "medium", "low", "low", "low", "low", "low"]
+        have_dryer_params = [True, False, True, False, False, False, False, False]
+        dryer_type_params = ["condensation", None, "condensation", None, None, None, None, None]
+        dryer_frequency_params = ["high", None, "medium", None, None, None, None, None]
+        have_dw_params = [True, True, True, True, False, False, True, False]
+        dw_frequency_params = ["medium", "low", "medium", "medium", None, None, "low", None]
+        grid_price_day_params=[0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36]
+        grid_price_night_params=[0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29]
+        wh_intelligence_params = True
+        wh_hour_mode = "fixed"
+        
+        params = {
+                "input_directory": input_directory,
+                "output_directory": output_directory,
+                "n_households": n_households,
+                "cooking_params": cooking_params,
+                "wh_capacity_params": wh_capacity_params,
+                "n_cold_source_params": n_cold_source_params,
+                "wm_frequency_params": wm_frequency_params,
+                "have_dryer_params": have_dryer_params,
+                "dryer_type_params": dryer_type_params,
+                "dryer_frequency_params": dryer_frequency_params,
+                "have_dw_params": have_dw_params,
+                "dw_frequency_params": dw_frequency_params,
+                "grid_price_day_params": grid_price_day_params,
+                "grid_price_night_params": grid_price_night_params,
+                "wh_intelligence_params": wh_intelligence_params,
+                "wh_hour_mode": wh_hour_mode,
+        }
+        
+        enercom = EnergyCommunity(pv_params)
+        enercom.func_compute_total_production()
+        multi = MultiHousehold(params, enercom)
+        multi.run()
+        multi.repartition_elec()
+        multi.save_results()
+        
+        
+        
+        
+        

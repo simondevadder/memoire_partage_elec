@@ -122,7 +122,7 @@ class EnergyCommunity:
         if self.grid_injection_price == -1:
             self.grid_injection_price = 0.015 + np.random.rand() * (0.05 - 0.015)  
         if self.investment_cost == -1:
-            price_Wp = 1.5 + np.random.rand() * (3 - 1.5)  # price of the PV panels in €/Wp
+            price_Wp = 3  # price of the PV panels in €/Wp
             watt_peak = np.sum(self.PV_area) * self.PV_efficiency *1000 # assuming 1000W/m^2
             print("Estimated investment cost between ", 1.5 *watt_peak, " and ", 3 * watt_peak, " €.")
             self.investment_cost = price_Wp * watt_peak
@@ -147,7 +147,6 @@ class EnergyCommunity:
         self.selling_price_gc = params.get('selling_price_gc', 65)
         self.gc = np.zeros(self.n_years)
         self.gc_revenue = np.zeros(self.n_years)
-        self.minimal_revenue = np.zeros(self.n_years)
         
         
         
