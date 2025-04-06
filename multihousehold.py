@@ -33,6 +33,7 @@ class MultiHousehold:
                 - T_ext_th_params (array of float): external temperature at which the heating is turned on parameters for each household (in °C)
                 - T_ext_th_night_params (array of float): external temperature at which the heating is turned on during the night parameters for each household (in °C)
                 - PEB_params (array of str): PEB parameters for each household (A to G)
+                - flat_area_params (array of float): flat area parameters for each household (in m²)
                 - heating_eff_params (array of float): heating efficiency parameters for each household (or COP for heat pumps)
                 - n_cold_source_params (array of int): number of cold sources parameters for each household
                 - have_wm_params (array of bool): washing machine parameters for each household (True or False)
@@ -71,6 +72,7 @@ class MultiHousehold:
         self.T_ext_th_params = params.get("T_ext_th_params", [12] * self.n_households)
         self.T_ext_th_night_params = params.get("T_ext_th_night_params", [7] * self.n_households)
         self.pEB_params = params.get("PEB_params", None)
+        self.flat_area_params = params.get("flat_area_params", [100] * self.n_households)
         self.heating_eff_params = params.get("heating_eff_params", [1] * self.n_households)
         self.n_cold_source_params = params.get("n_cold_source_params", [-1] * self.n_households)
         self.have_wm_params = params.get("have_wm_params", [True] * self.n_households)
@@ -126,6 +128,7 @@ class MultiHousehold:
                 "T_ext_th": self.T_ext_th_params[i],
                 "T_ext_th_night": self.T_ext_th_night_params[i],
                 "heating_efficiency": self.heating_eff_params[i],
+                "flat_area": self.flat_area_params[i],
                 "n_cold_sources": self.n_cold_source_params[i],
                 "have_washing_machine": self.have_wm_params[i],
                 "washing_frequency": self.wm_frequency_params[i],
