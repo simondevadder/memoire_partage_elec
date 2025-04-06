@@ -117,7 +117,7 @@ class MultiHousehold:
             params = {
                 "input_directory": self.input_dir,
                 "output_directory": self.output_dir,
-                "cooking": self.cooking_params[i],
+                "cooking activity": self.cooking_params[i],
                 "wh_type": self.wh_type_params[i],
                 "wh_capacity": self.wh_capacity_params[i],
                 "wh_intelligence": self.wh_intelligence_params,
@@ -229,7 +229,32 @@ class MultiHousehold:
         self.consumption_year = np.zeros((self.n_households, self.n_years))
         self.repartition_year = np.zeros((self.n_households, self.n_years))
         
-       
+        self.cooking_all = np.zeros((self.n_households))
+        self.wh_all = np.zeros((self.n_households, self.n_years))
+        self.cold_sources_all = np.zeros((self.n_households))
+        self.electric_heating_all = np.zeros((self.n_households, self.n_years))
+        self.other_all = np.zeros((self.n_households))
+        self.washing_utilities_all = np.zeros((self.n_households))
+        
+        self.wh_consumption_all = np.zeros((35040, self.n_years))
+        
+        ind = 0
+        for household in self.households_array:
+            self.cooking_all[ind] = np.sum(household.cooking)*0.25
+            if household.wh_multiyears:
+                self.wh_all[ind, :] = np.sum(household.load_wh, axis=0)*0.25
+                self.wh_consumption_all[:, :] += household.load_wh * 0.25
+            else:
+                self.wh_all[ind, 0] = np.sum(household.load_wh)*0.25
+                self.wh_consumption_all[:, 0] += household.load_wh * 0.25
+            self.cold_sources_all[ind] = np.sum(household.cold)*0.25
+            self.other_all[ind] = np.sum(household.other_power)*0.25
+            self.washing_utilities_all[ind] = np.sum(household.washing_usage)*0.25
+            if household.heating_is_elec:
+                self.electric_heating_all[ind, :] = np.sum(household.load_heating, axis=0)*0.25
+            ind += 1
+                
+           
         
         for year in range(self.n_years):
             self.injection_year[year] = np.sum(self.total_injection[:, year])*0.25
@@ -289,6 +314,7 @@ class MultiHousehold:
     def save_results(self):
         """ Save the results of the simulation in a csv file.
         """
+        print("annualized_investment_cost : ", self.annualized_investment_cost)
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         
@@ -306,9 +332,11 @@ class MultiHousehold:
             np.savetxt(from_grid_name, to_save_from_grid, delimiter=",", fmt="%.1f")
             
         np.savetxt(os.path.join(self.output_dir, "injection.csv"), self.total_injection, delimiter=",", fmt="%.1f")
+        np.savetxt(os.path.join(self.output_dir, "wh.csv"), self.wh_consumption_all, delimiter=",", fmt="%.1f")
         
         
-
+        self.array_title = np.array(["cooking", "cold_sources", "other", "washing_utilities"])
+        self.array_to_save = np.array([self.cooking_all,  self.cold_sources_all, self.other_all, self.washing_utilities_all])
         # Tu donnes un nom à chaque array
         arrays = {
             'Bills without sharing': self.total_price_without_pv,
@@ -321,6 +349,10 @@ class MultiHousehold:
             'total production': self.production_year.T,
             'total consumption': self.consumption_year,
             'total repartition': self.repartition_year,
+            'post of consumption' : self.array_title,
+            'post of consumption values' : self.array_to_save,
+            'wh' : self.wh_all,
+            'electric heating' : self.electric_heating_all,
         }
 
         # Créer un writer Excel

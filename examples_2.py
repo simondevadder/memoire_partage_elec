@@ -66,7 +66,9 @@ def example_1():
         grid_price_day_params=[0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36]
         grid_price_night_params=[0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29]
         wh_intelligence_params = True
-        wh_hour_mode = "perfect_knowledge"
+        #wh_night = [False, False, False, False, False, False, False, False]
+        #wh_hour_mode = "perfect_knowledge"
+        wh_hour_mode = "fixed"
         
         params = {
                 "input_directory": input_directory,
@@ -84,6 +86,7 @@ def example_1():
                 "grid_price_day_params": grid_price_day_params,
                 "grid_price_night_params": grid_price_night_params,
                 "wh_intelligence_params": wh_intelligence_params,
+             #   "wh_night_params": wh_night,
                 "wh_hour_mode": wh_hour_mode,
         }
         
