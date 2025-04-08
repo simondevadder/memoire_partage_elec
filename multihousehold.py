@@ -318,6 +318,7 @@ class MultiHousehold:
         """ Save the results of the simulation in a csv file.
         """
         print("annualized_investment_cost : ", self.annualized_investment_cost)
+        self.arr_annual_cost = np.array([self.annualized_investment_cost, 0,0])
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         
@@ -352,6 +353,7 @@ class MultiHousehold:
             'total production': self.production_year.T,
             'total consumption': self.consumption_year,
             'total repartition': self.repartition_year,
+            'annualized cost' : self.arr_annual_cost,
             'post of consumption' : self.array_title,
             'post of consumption values' : self.array_to_save,
             'wh' : self.wh_all,
