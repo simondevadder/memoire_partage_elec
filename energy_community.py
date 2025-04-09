@@ -148,6 +148,16 @@ class EnergyCommunity:
         self.gc = np.zeros(self.n_years)
         self.gc_revenue = np.zeros(self.n_years)
         
+        self.battery = params.get('battery', False) # if false, not taken into account
+        if self.battery:
+            self.battery_capacity = params.get('battery_capacity', 0) # capacity of the battery (Wh)
+            self.battery_efficiency = params.get('battery_efficiency', 1) # round trip efficiency of the battery  
+                                                                        #we assume that the efficiency of charging and discharging are the same
+            self.battery_charging_power = params.get('battery_charging_power', 0) # power of the battery (W)
+            self.battery_discharging_power = params.get('battery_discharging_power', 0) # power of the battery (W)
+            self.battry_self_discharge = params.get('battery_self_discharge', 0) # self discharge of the battery per hour
+            self.battery_cost = params.get('battery_cost', 0) # cost of the battery (€)
+            self.battery_soc = 0.2*self.battery_capacity # state of charge of the battery (Wh)
         
         
         """
@@ -408,6 +418,48 @@ class EnergyCommunity:
             taken_to_grid (array): Array of the energy taken to the grid by the consumers
             injected_to_grid (float): Energy injected to the grid by the community
         """
+        if self.battery : 
+            self.to_bat = 0
+            self.from_bat = 0
+            if np.sum(consumption) < production : 
+                self.to_bat = 0
+                dispo = production - np.sum(consumption)
+                if dispo < self.battery_charging_power : 
+                    if self.battery_soc + dispo * 0.25 * np.sqrt(self.battery_efficiency)<self.battery_capacity:
+                        self.battery_soc += dispo * 0.25 * np.sqrt(self.battery_efficiency)
+                        self.to_bat = dispo 
+                    else : 
+                        self.to_bat = (self.battery_capacity - self.battery_soc) / (0.25 * np.sqrt(self.battery_efficiency))
+                        self.battery_soc = self.battery_capacity
+                else : 
+                    if self.battery_soc + self.battery_charging_power * 0.25 * np.sqrt(self.battery_efficiency)<self.battery_capacity:
+                        self.battery_soc += self.battery_charging_power * 0.25 * np.sqrt(self.battery_efficiency)
+                        self.to_bat = self.battery_charging_power
+                    else :
+                        self.to_bat = (self.battery_capacity - self.battery_soc) / (0.25 * np.sqrt(self.battery_efficiency))
+                        self.battery_soc = self.battery_capacity
+            elif np.sum(consumption) > production :
+                self.from_bat = 0
+                need = np.sum(consumption) - production
+                if self.battery_soc > 0.2* self.battery_capacity:
+                    if self.battery_soc > 0.2*self.battery_capacity + need *0.25 /  np.sqrt(self.battery_efficiency):
+                        if self.battery_discharging_power >need / np.sqrt(self.battery_efficiency):
+                            self.battery_soc -= need * 0.25 / np.sqrt(self.battery_efficiency)
+                            self.from_bat = need
+                        else:
+                            self.battery_soc -= self.battery_discharging_power * 0.25 / np.sqrt(self.battery_efficiency)
+                            self.from_bat = self.battery_discharging_power
+                    else:
+                        dispo_bat = self.battery_soc - 0.2*self.battery_capacity
+                        if dispo_bat < self.battery_discharging_power * 0.25 / np.sqrt(self.battery_efficiency):
+                            self.battery_soc = 0.2*self.battery_capacity
+                            self.from_bat = dispo_bat * np.sqrt(self.battery_efficiency) / 0.25
+                        else : 
+                            self.battery_soc -= self.battery_discharging_power * 0.25 / np.sqrt(self.battery_discharging_power)
+                            self.from_bat = self.battery_discharging_power
+                production += self.from_bat
+            production -= self.to_bat
+        
         reparti = 0
         repartition = np.zeros(len(consumption))
         if self.key=="fix1round":

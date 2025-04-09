@@ -208,13 +208,15 @@ class MultiHousehold:
         self.total_repartition = np.zeros((35040,self.n_households, self.n_years))
         self.total_from_grid = np.zeros((35040,self.n_households, self.n_years))
         self.total_injection = np.zeros((35040, self.n_years ))
+        self.soc_years = np.zeros((35040, self.n_years))
         
         for year in range(self.n_years):
             for i in range(35040):
                 consumption_to_rep = self.total_electric_consumption[i, :, year]
                 production_to_rep = self.production[i//4, year]
                 self.total_repartition[i, :, year], self.total_from_grid[i, :, year], self.total_injection[i, year] = self.enercom.func_repartition(consumption_to_rep, production_to_rep)
-                
+                if self.enercom.battery:
+                    self.soc_years[i, year] = self.enercom.battery_soc
                 
     def compute_metrics(self):
         """Compute the self consumption and self sufficiency of the households. Compute the total price that each household would have paid 
@@ -337,6 +339,8 @@ class MultiHousehold:
             
         np.savetxt(os.path.join(self.output_dir, "injection.csv"), self.total_injection, delimiter=",", fmt="%.1f")
         np.savetxt(os.path.join(self.output_dir, "wh.csv"), self.wh_consumption_all, delimiter=",", fmt="%.1f")
+        if self.enercom.battery:
+            np.savetxt(os.path.join(self.output_dir, "soc.csv"), self.soc_years, delimiter=",", fmt="%.1f")
         
         
         self.array_title = np.array(["cooking", "cold_sources", "other", "washing_utilities"])
