@@ -209,6 +209,8 @@ class MultiHousehold:
         self.total_from_grid = np.zeros((35040,self.n_households, self.n_years))
         self.total_injection = np.zeros((35040, self.n_years ))
         self.soc_years = np.zeros((35040, self.n_years))
+        if self.enercom.ev_charger : 
+            self.ev_charger_from_pv = np.zeros((35040, self.n_years))
         
         for year in range(self.n_years):
             for i in range(35040):
@@ -217,6 +219,15 @@ class MultiHousehold:
                 self.total_repartition[i, :, year], self.total_from_grid[i, :, year], self.total_injection[i, year] = self.enercom.func_repartition(consumption_to_rep, production_to_rep)
                 if self.enercom.battery:
                     self.soc_years[i, year] = self.enercom.battery_soc
+                if self.enercom.ev_charger : 
+                    if self.enercom.ev_powerarray[i]>0 : 
+                        if self.total_injection[i, year] > self.enercom.ev_powerarray[i] : 
+                            self.ev_charger_from_pv[i, year] = self.enercom.ev_powerarray[i]
+                            self.total_injection[i, year] -= self.enercom.ev_powerarray[i]
+                        else :
+                            self.ev_charger_from_pv[i, year] = self.total_injection[i, year]
+                            self.total_injection[i, year] = 0
+                    
                 
     def compute_metrics(self):
         """Compute the self consumption and self sufficiency of the households. Compute the total price that each household would have paid 
@@ -286,20 +297,26 @@ class MultiHousehold:
         self.total_conso_day_with_pv = np.zeros((self.n_households, self.n_years))
         self.total_conso_from_pv = np.zeros((self.n_households, self.n_years))
         
+        self.total_revenue_from_ev = np.zeros((self.n_years))
+        self.total_paid_by_ev = np.zeros((self.n_years))
+        
         for year in range(self.n_years):
             for i in range(35040):
                 quart_sem = i % 672
                 quart_day = i % 96
                 if quart_sem >=478 : 
-                    self.total_conso_night[:, year] += self.total_electric_consumption[quart_sem, :, year] * 0.25 *0.001
-                    self.total_conso_night_with_pv[:, year] += self.total_from_grid[quart_sem, :, year] * 0.25 * 0.001
+                    self.total_conso_night[:, year] += self.total_electric_consumption[i, :, year] * 0.25 *0.001
+                    self.total_conso_night_with_pv[:, year] += self.total_from_grid[i, :, year] * 0.25 * 0.001
                 elif quart_day <= 28 or quart_day >= 88 :
-                    self.total_conso_night[:, year] += self.total_electric_consumption[quart_sem, :, year] * 0.25 * 0.001
-                    self.total_conso_night_with_pv[:, year] += self.total_from_grid[quart_sem, :, year] * 0.25 * 0.001
+                    self.total_conso_night[:, year] += self.total_electric_consumption[i, :, year] * 0.25 * 0.001
+                    self.total_conso_night_with_pv[:, year] += self.total_from_grid[i, :, year] * 0.25 * 0.001
                 else :
-                    self.total_conso_day[:, year] += self.total_electric_consumption[quart_sem, :, year] * 0.25 * 0.001
-                    self.total_conso_day_with_pv[:, year] += self.total_from_grid[quart_sem, :, year] * 0.25 * 0.001
+                    self.total_conso_day[:, year] += self.total_electric_consumption[i, :, year] * 0.25 * 0.001
+                    self.total_conso_day_with_pv[:, year] += self.total_from_grid[i, :, year] * 0.25 * 0.001
             self.total_conso_from_pv[:, year] = self.total_repartition[:, :, year].sum(axis=0) *0.25 * 0.001
+            if self.enercom.ev_charger :
+                self.total_paid_by_ev[year] = np.sum(self.enercom.ev_powerarray)*0.25*0.001 * self.enercom.ev_price
+                self.total_revenue_from_ev[year] = np.sum(self.ev_charger_from_pv[:, year]) * 0.25 * 0.001 * self.enercom.ev_price
             
             for i in range(self.n_households):
                 self.total_price_without_pv[i, year] = self.total_conso_night[i, year] * self.grid_price_night_params[i] + self.total_conso_day[i, year] * self.grid_price_day_params[i]
@@ -307,6 +324,8 @@ class MultiHousehold:
                 self.total_revenue_with_pv[year] += self.total_conso_from_pv[i, year] * self.enercom.sharing_price 
             self.total_revenue_without_pv[year] += self.production_year[year] * self.enercom.grid_injection_price * 0.001
             self.total_revenue_with_pv[year] += self.injection_year[year] * self.enercom.grid_injection_price * 0.001
+            if self.enercom.ev_charger : 
+                self.total_revenue_with_pv[year] += self.total_revenue_from_ev[year]
         self.enercom.compute_minimal_revenue()
         self.enercom.compute_gc_gain()
         self.annualized_investment_cost = self.enercom.annualized_investment_cost
@@ -341,6 +360,11 @@ class MultiHousehold:
         np.savetxt(os.path.join(self.output_dir, "wh.csv"), self.wh_consumption_all, delimiter=",", fmt="%.1f")
         if self.enercom.battery:
             np.savetxt(os.path.join(self.output_dir, "soc.csv"), self.soc_years, delimiter=",", fmt="%.1f")
+        if self.enercom.ev_charger:
+            np.savetxt(os.path.join(self.output_dir, "ev_charger.csv"), self.ev_charger_from_pv, delimiter=",", fmt="%.1f")
+            self.evarray = self.total_revenue_from_ev
+        else:
+            self.evarray = np.zeros((self.n_years))
         
         
         self.array_title = np.array(["cooking", "cold_sources", "other", "washing_utilities"])
@@ -351,6 +375,7 @@ class MultiHousehold:
             'Bills with sharing': self.total_price_with_pv,
             'revenue without sharing': self.total_revenue_without_pv,
             'revenue with sharing': self.total_revenue_with_pv,
+            'revenue from EV': self.evarray,
             'self consumption': self.self_consumption.T,
             'self sufficiency': self.self_sufficiency,
             'total injection': self.injection_year.T,
