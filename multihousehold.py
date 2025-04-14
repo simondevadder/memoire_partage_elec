@@ -303,7 +303,7 @@ class MultiHousehold:
             
             for i in range(self.n_households):
                 self.total_price_without_pv[i, year] = self.total_conso_night[i, year] * self.grid_price_night_params[i] + self.total_conso_day[i, year] * self.grid_price_day_params[i]
-                self.total_price_with_pv[i, year] = self.total_conso_night_with_pv[i, year] * self.grid_price_night_params[i] + self.total_conso_day_with_pv[i, year] * self.grid_price_day_params[i]
+                self.total_price_with_pv[i, year] = self.total_conso_night_with_pv[i, year] * self.grid_price_night_params[i] + self.total_conso_day_with_pv[i, year] * self.grid_price_day_params[i] + self.total_conso_from_pv[i, year] * self.enercom.sharing_price
                 self.total_revenue_with_pv[year] += self.total_conso_from_pv[i, year] * self.enercom.sharing_price 
             self.total_revenue_without_pv[year] += self.production_year[year] * self.enercom.grid_injection_price * 0.001
             self.total_revenue_with_pv[year] += self.injection_year[year] * self.enercom.grid_injection_price * 0.001
