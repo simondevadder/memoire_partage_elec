@@ -109,6 +109,7 @@ class EnergyCommunity:
         self.PV_Tref = params.get('PV_Tref', 25)  # Usually 25°C
         self.PV_area = params.get('PV_area', 1)
         self.PV_shaddowing = params.get('PV_shaddowing', [])  # if None, return an empty list
+        self.PV_annual_degradation = params.get('PV_annual_degradation', 0.005) # annual degradation of the PV panels (0.5%/year)
         
         
         self.sharing_price = params.get('sharing_price', -1)
@@ -183,6 +184,28 @@ class EnergyCommunity:
             self.type_heating = params.get('type_heating', None) # either electric boiler, heating or electric radiators
             self.common_area_volume = params.get('common_area_volume', 0) # volume of the common area (m^3)
         """
+    
+    def clean(self):
+        """ reinitialize all written array in the class
+        """
+        if self.ev_charger : 
+            self.ev_powerarray = np.zeros(35040)
+            self.is_on = False
+            self.time_off = np.random.randint(1,17)
+            self.time_on = 0  # time_on :  the time the EV stays plugged in the charger (15min timestep),
+            self.last_timestep = 0
+        
+        self.consumption = np.zeros(self.n_households)
+        self.repartition = np.zeros(self.n_households)
+        self.production = 0
+        self.taken_to_grid = np.zeros(self.n_households)
+        self.injected_to_grid = 0
+        
+        self.total_production = np.zeros((8760,self.n_years))
+        self.total_G = np.zeros((8760,self.n_years))
+            
+
+        
     def ev_charger(self):
         """compute the electric consumption of an ev charger
         """

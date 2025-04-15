@@ -107,8 +107,78 @@ class MultiHousehold:
             elif self.wh_hours_mode == "fixed":
                 self.define_wh_hour_begin()
         
+    def clean(self):
+        for household in self.households_array:
+            household.clean()
+        self.enercom.clean()
+        self.total_electric_consumption = np.zeros((35040, self.n_households, self.n_years))
+        self.total_repartition = np.zeros((35040, self.n_households, self.n_years))
+        self.total_from_grid = np.zeros((35040, self.n_households, self.n_years))
+        self.total_injection = np.zeros((35040, self.n_years))
+        self.soc_years = np.zeros((35040, self.n_years))
+        self.ev_charger_from_pv = np.zeros((35040, self.n_years))
+        self.total_revenue_from_ev = np.zeros((self.n_years))
+        self.total_paid_by_ev = np.zeros((self.n_years))
+        self.self_consumption = np.zeros((self.n_years))
+        self.self_sufficiency = np.zeros((self.n_households, self.n_years))
+        self.injection_year = np.zeros((self.n_years))
+        self.production_year = np.zeros((self.n_years))
+        self.consumption_year = np.zeros((self.n_households, self.n_years))
+        self.repartition_year = np.zeros((self.n_households, self.n_years))
+        self.cooking_all = np.zeros((self.n_households))
+        self.wh_all = np.zeros((self.n_households, self.n_years))
+        self.cold_sources_all = np.zeros((self.n_households))
+        self.electric_heating_all = np.zeros((self.n_households, self.n_years))
+        self.other_all = np.zeros((self.n_households))
+        self.washing_utilities_all = np.zeros((self.n_households))
+        self.wh_consumption_all = np.zeros((35040, self.n_years))
+        self.total_price_without_pv = np.zeros((self.n_households, self.n_years))
+        self.total_price_with_pv = np.zeros((self.n_households, self.n_years))
+        self.total_revenue_without_pv = np.zeros((self.n_years))
+        self.total_revenue_with_pv = np.zeros((self.n_years))
+        self.total_conso_night = np.zeros((self.n_households, self.n_years))
+        self.total_conso_day = np.zeros((self.n_households, self.n_years))
+        self.total_conso_night_with_pv = np.zeros((self.n_households, self.n_years))
+        self.total_conso_day_with_pv = np.zeros((self.n_households, self.n_years))
+        self.total_conso_from_pv = np.zeros((self.n_households, self.n_years))
+        self.total_revenue_from_ev = np.zeros((self.n_years))
+        self.total_paid_by_ev = np.zeros((self.n_years))
+        self.annualized_investment_cost = 0
+        self.arr_annual_cost = np.zeros((3))
+        self.array_title = np.zeros((4))
+        self.array_to_save = np.zeros((4))
+        self.evarray = np.zeros((self.n_years))
+        self.wh_hours_begin_all = np.zeros((self.n_households, 365, self.n_years))
+        self.wh_hours_begin = np.zeros((self.n_households))
+      
         
-    
+    def annual_return_lifetime(self):
+        """This function compute the annual return we can expect from the investment. It takes into account the degradation of the 
+        panels over the years. 
+        """
+        lifetime = self.enercom.estimated_lifetime
+        degradation = self.enercom.PV_annual_degradation 
+        self.annual_return = np.zeros((lifetime+3))
+        self.annual_cost = self.enercom.investment_cost / lifetime
+        for r in range(0, lifetime, 3):
+            self.enercom.clean()
+            self.clean()
+            self.enercom.func_compute_total_production()
+            self.run()
+            self.repartition_elec()
+            self.pricing()
+            self.annual_return[r] = self.total_revenue_with_pv[0]
+            self.annual_return[r+1] = self.total_revenue_with_pv[1]
+            self.annual_return[r+2] = self.total_revenue_with_pv[2]
+            self.enercom.PV_efficiency *= (1-degradation)
+            
+        self.mean_annual_return = np.mean(self.annual_return)
+        self.total_return = np.sum(self.annual_return)
+        self.roi =100* (self.total_return - self.enercom.investment_cost) / self.enercom.investment_cost 
+        self.annual_return_rate =( (self.total_return / self.enercom.investment_cost) ** (1/lifetime) - 1)*100
+
+
+            
     def create_households(self):
         """
         Create the households and initialize the parameters.

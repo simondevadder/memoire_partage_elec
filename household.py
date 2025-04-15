@@ -307,8 +307,26 @@ class Household:
         
         
         
-            
-                
+    def clean(self):
+        """reinitialize the class
+        """
+        self.consumption = np.zeros((35040))  # To be changed, 35 040 is the number of time step in a year, 1 is the number of columns, heating not taken into account
+                                                 # wh neither is multiyear
+        self.cooking = np.zeros((35040))
+        self.cold = np.zeros((35040))
+        self.washing_usage = np.zeros((35040))
+        self.other_power = np.zeros((35040))
+        self.load_heating = np.zeros((35040, self.n_year_temp_data))
+        self.total_consumption = np.zeros((35040, self.n_year_temp_data)) 
+        self.day = 1
+        self.time = 0
+        self.hour = 0
+        if self.wh_multiyears:
+            self.load_wh = np.zeros((35040, self.n_year_temp_data))
+        else:
+            self.load_wh = np.zeros((35040))
+        
+        
     def load_temperature_data(self):
         df = pd.read_csv(self.input_directory + '/temperature.csv',header=None, sep=',', encoding='ISO-8859-1', decimal='.')
         return df.values
