@@ -65,7 +65,7 @@ class MultiHousehold:
         self.output_dir = params["output_directory"]
         self.cooking_params = params.get("cooking_params", [-1] * self.n_households)
         self.wh_type_params = params.get("wh_type_params", ["Joules"] * self.n_households)
-        self.wh_capacity_params = params.get("wh_capacity_params", [-1] * self.n_households)
+        self.wh_capacity_params = params.get("wh_usage_params", [-1] * self.n_households)
         self.wh_intelligence_params = params.get("wh_intelligence_params",False)
         self.wh_night_params = params.get("wh_night_params", [-1] * self.n_households)
         self.heating_is_elec_params = params.get("heating_is_elec_params", [False] * self.n_households)
@@ -191,7 +191,7 @@ class MultiHousehold:
                 "output_directory": self.output_dir,
                 "cooking activity": self.cooking_params[i],
                 "wh_type": self.wh_type_params[i],
-                "wh_capacity": self.wh_capacity_params[i],
+                "wh_usage": self.wh_capacity_params[i],
                 "wh_intelligence": self.wh_intelligence_params,
                 "wh_night": self.wh_night_params[i],
                 "heating_is_elec": self.heating_is_elec_params[i],

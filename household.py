@@ -40,7 +40,7 @@ class Household:
                                                                             other applyances
                 - wh_type (str): the type of water heater, can be 'Joules', 'thermodynamic' or 'non-electric'
                 - wh_night (bool): True if the water heater is only used at night, False otherwise (the water heater is used during the day)
-                - wh_capacity (str): the capacity of the water heater 'low' for <149l, 'medium' for 150<=c<201l, 'high' for >201l, -1 if the capacity is unknown
+                - wh_usage (str): annual consumption of the water heater, low : <750kwh/an, medium : 750 - 2000kwh/year, high : >2000kwh/y, -1 if the capacity is unknown
                 - wh_intelligence (bool): True if the water heater is intelligent, False otherwise
                 - wh_multiyears (bool): True if the consumption of wh depends on the weather (pv production), False otherwise
                 - wh_hours_begin (int or array of int): if intelligence, the hour of the day when the water heater is turned on, -1 if the hour is unknown or does not apply
@@ -146,7 +146,7 @@ class Household:
         if self.wh_intelligence :
             self.wh_hours_begin = params.get('wh_hours_begin', -1)   # Array of int if multiyear (one per year)
             
-        self.wh_capacity = params.get('wh_capacity', -1)
+        self.wh_capacity = params.get('wh_usage', -1)
         if self.wh_capacity == -1:
             r = np.random.rand()
             if r < 0.47:
@@ -155,6 +155,16 @@ class Household:
                 self.wh_capacity = 'high'
             else:
                 self.wh_capacity = 'low'
+        
+        if self.wh_type == 'Joules':
+                if self.wh_capacity == 'low':
+                    self.wh_power = np.random.randint(685, 1028)  #between 685 and 1027 W (cycle of 2hours each day, between 500 and 750kwh /y)
+                elif self.wh_capacity == 'medium':
+                    self.wh_power = np.random.randint(1028, 2740)  #between 1028 and 2740 W (cycle of 2hours each day, between 750 and 2000kwh /y)
+                elif self.wh_capacity == 'high':
+                    self.wh_power = np.random.randint(2740, 4795)  #between 2740 and 4200 W (cycle of 2hours each day, between 2000 and 3500kwh /y)
+        elif self.wh_type == 'thermodynamic':         
+                self.wh_power = np.random.randint(685, 1370) #between 685 and 1370 W (cycle of 2hours each day, between 500 and 1000kwh /y)
                 
         self.heating_is_elec = params.get('heating_is_elec', False)
         self.temperature_array = self.load_temperature_data() 
@@ -448,15 +458,7 @@ class Household:
                         wh_beginning_hour = int(self.wh_hours_begin*4)  # if wh_multiyear, wh_beginning_hour will be an array
             
             wh_duration = np.random.randint(6, 11) # entre 1h30 et 2h30
-            if self.wh_type == 'Joules':
-                if self.wh_capacity == 'low':
-                    wh_power = 1200
-                elif self.wh_capacity == 'medium':
-                    wh_power = 2200
-                elif self.wh_capacity == 'high':
-                    wh_power = 3000 
-            elif self.wh_type == 'thermodynamic':         
-                wh_power = 1000
+            
             
             if self.day < 135 or self.day > 304 : 
                 wh_duration  = int(wh_duration * 1.3)
@@ -466,11 +468,11 @@ class Household:
             wh_index_begin = (self.day - 1) * 24 * 4 + wh_beginning_hour  # will be an array if multiyear
             wh_index_end = wh_index_begin + wh_duration    # will be an array if multiyear
             if not self.wh_multiyears:
-                self.consumption[wh_index_begin:wh_index_end] += wh_power
-                self.load_wh[wh_index_begin:wh_index_end] += wh_power
+                self.consumption[wh_index_begin:wh_index_end] += self.wh_power
+                self.load_wh[wh_index_begin:wh_index_end] += self.wh_power
             else:
                 for i in range(self.n_year_temp_data):
-                    self.load_wh[wh_index_begin[i]:wh_index_end[i], i] += wh_power
+                    self.load_wh[wh_index_begin[i]:wh_index_end[i], i] += self.wh_power
     
     
     def electric_heating(self):

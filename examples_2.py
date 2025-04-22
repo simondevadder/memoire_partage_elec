@@ -105,7 +105,8 @@ def example_2():
         
         pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
                 "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [320], "PV_efficiency" : 0.22, "PV_module_size": [1.6, 0.99, 0.008],
-                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.18, "grid_injection_price" : 0.04, "investment_cost" : 90000, "estimated_lifetime" : 25, "interest_rate" : 0.03
+                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 90000, "estimated_lifetime" : 25, "interest_rate" : 0.03,
+                "battery": True, "battery_capacity": 20000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000
                 }
         
         #"battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000,
@@ -144,7 +145,7 @@ def example_2():
                 "output_directory": output_directory,
                 "n_households": n_households,
                 "cooking_params": cooking_params,
-                "wh_capacity_params": wh_capacity_params,
+                "wh_usage_params": wh_capacity_params,
                 "n_cold_source_params": n_cold_source_params,
                 "wm_frequency_params": wm_frequency_params,
                 "have_dryer_params": have_dryer_params,
@@ -260,9 +261,82 @@ def compute_roi():
         #multi.save_results()
 #compute_roi()
         
+def compute_single_home():
+         
+        pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
+                "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [320], "PV_efficiency" : 0.22, "PV_module_size": [1.6, 0.99, 0.008],
+                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0, "grid_injection_price" : 0.04, "investment_cost" : 90000, "estimated_lifetime" : 25, "interest_rate" : 0.03
+                }
+        
+        #"battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000,
+        #"EV_charger" : True, "EV_price" : 0.45
+        
 
+        input_directory = "pv_example_2"
+        output_directory = "single_home"
+        n_households = 1
+        cooking_params = ["high"]
+        wh_capacity_params = ["high"]
+        n_cold_source_params = [2]
+        wm_frequency_params = ["medium"]
+        have_dryer_params = [True]
+        dryer_type_params = ["condensation"]
+        dryer_frequency_params = ["high"]
+        have_dw_params = [True]
+        dw_frequency_params = ["medium"]
+        grid_price_day_params=[0.36]
+        grid_price_night_params=[0.29]
+        heating_is_elec_params = [True]*n_households
+        T_ext_th_params = [12]
+        T_ext_th_night_params = [7]
+        PEB_params = ["A"]
+        heating_eff_params = [2.3]*n_households
+        
+        flat_area_params = [120]
+        #wh_night = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+        wh_night = [False]*n_households
+        wh_intelligence_params = True
+        #wh_hour_mode = "perfect_knowledge"
+        wh_hour_mode = "fixed"
+        
+        params = {
+                "input_directory": input_directory,
+                "output_directory": output_directory,
+                "n_households": n_households,
+                "cooking_params": cooking_params,
+                "wh_capacity_params": wh_capacity_params,
+                "n_cold_source_params": n_cold_source_params,
+                "wm_frequency_params": wm_frequency_params,
+                "have_dryer_params": have_dryer_params,
+                "dryer_type_params": dryer_type_params,
+                "dryer_frequency_params": dryer_frequency_params,
+                "have_dw_params": have_dw_params,
+                "dw_frequency_params": dw_frequency_params,
+                "grid_price_day_params": grid_price_day_params,
+                "grid_price_night_params": grid_price_night_params,
+                "wh_intelligence_params": wh_intelligence_params,
+                "heating_is_elec_params": heating_is_elec_params,
+                "T_ext_th_params": T_ext_th_params,
+                "T_ext_th_night_params": T_ext_th_night_params,
+                "PEB_params": PEB_params,
+                "heating_eff_params": heating_eff_params,
+                "flat_area_params": flat_area_params,
+                "wh_night_params": wh_night,
+                "wh_hour_mode": wh_hour_mode,
+        }
+        
+        enercom = EnergyCommunity(pv_params)
+        #enercom.get_weather_data()
+        enercom.func_compute_total_production()
+        #enercom.save_production()
+        multi = MultiHousehold(params, enercom)
+        multi.run()
+        multi.repartition_elec()
+        multi.compute_metrics()
+        multi.pricing()
+        multi.save_results()
         
         
-        
+#compute_single_home()    
         
         

@@ -81,7 +81,7 @@ def test_load_temperature():
     print(on)
     print(is_on)
     
-test_load_temperature()
+#test_load_temperature()
     
 def test_cooking_this_day():
     params["cooking activity"]  = "medium"
@@ -115,8 +115,8 @@ def test_cooking_this_day():
 #test_cooking_this_day()
 
 def test_electric_water_heater():
-    params['wh_capacity'] = 'medium'
-    params['wh_type'] = 'thermodynamic'
+    params['wh_usage'] = 'medium'
+    params['wh_type'] = 'Joules'
     params['wh_night'] = False
     household = Household(params)
     for i in range(365):
@@ -139,6 +139,88 @@ def test_electric_water_heater():
     print(total/1000)
 #test_electric_water_heater()
   
+def test_wh_2():
+    n_low = 20
+    n_medium = 20
+    n_high = 20
+    n_thermo = 20
+    
+    conso_low = np.zeros(n_low)
+    conso_medium = np.zeros(n_medium)
+    conso_high = np.zeros(n_high)
+    conso_thermo = np.zeros(n_thermo)
+    
+    for i in range(n_low):
+        params['wh_usage'] = 'low'
+        params['wh_type'] = 'Joules'
+        household = Household(params)
+        for j in range(365):
+            household.electric_water_heater()
+            household.day +=1
+        conso_low[i] = np.sum(household.consumption)/4000
+        
+    for i in range(n_medium):
+        params['wh_usage'] = 'medium'
+        params['wh_type'] = 'Joules'
+        household = Household(params)
+        for j in range(365):
+            household.electric_water_heater()
+            household.day +=1
+        conso_medium[i] = np.sum(household.consumption)/4000
+        
+    for i in range(n_high):
+        params['wh_usage'] = 'high'
+        params['wh_type'] = 'Joules'
+        household = Household(params)
+        for j in range(365):
+            household.electric_water_heater()
+            household.day +=1
+        conso_high[i] = np.sum(household.consumption)/4000
+    
+    for i in range(n_thermo):
+        params['wh_type'] = 'thermodynamic'
+        household = Household(params)
+        for j in range(365):
+            household.electric_water_heater()
+            household.day +=1
+        conso_thermo[i] = np.sum(household.consumption)/4000
+        
+    # Noms des tableaux pour la légende
+    labels = ['Low', 'Medium', 'High', 'Thermodynamic']
+
+    # Combiner les données pour trier
+    data = np.concatenate([conso_low, conso_medium, conso_high, conso_thermo])
+    colors = ['skyblue'] * len(conso_low) + ['yellow'] * len(conso_medium) + ['red'] * len(conso_high) + ['green'] * len(conso_thermo)
+
+    # Trier par ordre décroissant
+    sorted_indices = np.argsort(data)[::-1]
+    sorted_data = data[sorted_indices]
+    sorted_colors = np.array(colors)[sorted_indices]
+
+    # Créer le graphique
+    plt.figure(figsize=(10, 6))
+    sns.barplot(x=np.arange(len(sorted_data)), y=sorted_data, palette=sorted_colors)
+
+    # Ajouter les légendes et ajuster le graphique
+    #plt.title('Bar Plot des valeurs triées', fontsize=16)
+    #plt.xlabel('', fontsize=14)
+    plt.ylabel('Annual consumption [kWh]', fontsize=14)
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+    plt.xticks([])  # Supprimer les ticks et étiquettes sur l'axe des x
+    plt.legend(handles=[
+        plt.Line2D([0], [0], color='skyblue', lw=4, label='Low'),
+        plt.Line2D([0], [0], color='yellow', lw=4, label='Medium'),
+        plt.Line2D([0], [0], color='red', lw=4, label='High'),
+        plt.Line2D([0], [0], color='green', lw=4, label='Thermodynamic'),
+    ], loc='upper right')
+
+    # Afficher le graphique
+    plt.tight_layout()
+    plt.show()
+
+test_wh_2()
+        
 def test_cold_source():
     params['number_cold_sources'] = 2
     household = Household(params)
