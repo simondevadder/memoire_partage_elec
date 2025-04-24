@@ -104,9 +104,8 @@ def example_1():
 def example_2():
         
         pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
-                "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [320], "PV_efficiency" : 0.22, "PV_module_size": [1.6, 0.99, 0.008],
-                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 90000, "estimated_lifetime" : 25, "interest_rate" : 0.03,
-                "battery": True, "battery_capacity": 20000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000
+                "n_households" : 8, "key" : "prorata", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [320], "PV_efficiency" : 0.22, "PV_module_size": [1.6, 0.99, 0.008],
+                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 90000, "estimated_lifetime" : 25, "interest_rate" : 0.03
                 }
         
         #"battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000,
@@ -117,12 +116,12 @@ def example_2():
         output_directory = "example_2"
         n_households = 24
         cooking_params = ["high", "medium", "low", "low", "medium", "low", "high", "medium", "high", "medium", "low", "low", "medium", "low", "high", "medium", "high", "medium", "high", "medium", "low", "low", "medium", "low" ]
-        wh_capacity_params = ["high", "medium", "low", "medium", "low", "medium", "medium", "medium", "high", "medium", "medium", "low", "low", "medium", "medium", "medium", "high", "medium", "low", "medium", "low", "medium", "high", "medium"]
-        n_cold_source_params = [2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2,1,1,1,1,2,1,2,1]
+        wh_capacity_params = ["low", "medium", "medium", "medium", "high", "medium", "medium", "medium", "low", "medium", "medium", "low", "low", "medium", "medium", "medium", "high", "medium", "low", "medium", "low", "medium", "high", "medium"]
+        n_cold_source_params = [1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 2,1,1,1,1,2,1,2,1]
         wm_frequency_params = ["medium", "medium", "medium", "low", "low", "low", "low", "low", "medium", "high", "medium", "low", "low", "high", "low", "medium", "medium", "high", "medium", "low", "low", "low", "low", "high"]
         have_dryer_params = [True, False, True, False, False, False, False, False, True, False, True, False, False, False, False, False, True, False, True, False, False, False, True, False]
-        dryer_type_params = ["condensation", None, "condensation", None, None, None, None, None, "evacuation", None, "heat-pump", None, None, None, None, None, "heat-pump", None, "evacuation", None, None, None, "condensation", None]
-        dryer_frequency_params = ["high", None, "medium", None, None, None, None, None, "low", None, "medium", None, None, None, None, None, "medium", None, "low", None, None, None, "medium", None]
+        dryer_type_params = [None, None, "condensation", None, None, None, None, None, "evacuation", None, "heat-pump", None, None, None, None, None, "heat-pump", None, "evacuation", None, None, None, "condensation", None]
+        dryer_frequency_params = [None, None, "medium", None, None, None, None, None, "low", None, "medium", None, None, None, None, None, "medium", None, "low", None, None, None, "medium", None]
         have_dw_params = [True, True, True, True, False, False, True, False, True, True, True, True, True, False, False, False, False, False, True, True, True, True, False, False, True, False]
         dw_frequency_params = ["medium", "low", "medium", "medium", None, None, "low", None, "medium", "medium", "low", "high", "medium", "high", None, None, None, None, None, "medium", "low", "medium", "low", None, None, "low", None]
         grid_price_day_params=[0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36]
@@ -130,10 +129,10 @@ def example_2():
         heating_is_elec_params = [True]*n_households
         T_ext_th_params = [12,8,14,11,13,13,11,14,12,10,11,9,13,15,12,12,12,11,13,15,9,8,16,12]
         T_ext_th_night_params = [7,5,9,9,5,7,6,8,7,8,7,6,5,9,10,7,7,6,8,8,4,5,10,7]
-        PEB_params = ["A","B", "A", "B", "A", "B", "A", "B", "A","B", "A", "B", "A", "B", "A", "B", "A","B", "A", "B", "A","B", "A","B"]
+        PEB_params = ["A","A", "A", "B", "A", "B", "A", "B", "B","B", "A", "B", "A", "A", "B", "B", "A","B", "A", "A", "A","B", "A","B"]
         heating_eff_params = [2.3]*n_households
         
-        flat_area_params = [40,66,120,150,250,66,40,50,40,66,120,150,250,66,40,50,40,66,120,150,250,66,40,50]
+        flat_area_params = [60,100,120,150,250,120,60,80,100,80,120,150,250,66,100,75,110,120,120,150,250,66,80,90]
         #wh_night = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
         wh_night = [False]*n_households
         wh_intelligence_params = True

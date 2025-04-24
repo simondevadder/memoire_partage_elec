@@ -530,7 +530,11 @@ class EnergyCommunity:
         elif self.key=="fixmultiround":
             still_to_repart = production
             conso_not_full = consumption - repartition
+            i=0
             while still_to_repart > 0 and sum(conso_not_full) > 0:
+                if i>10 : 
+                    print("Infinite loop in repartition")
+                    break
                 remain = 0
                 consumed_this_round = 0
                 for i in range(len(conso_not_full)):
@@ -549,6 +553,7 @@ class EnergyCommunity:
                             reparti += conso_not_full[i]
                             conso_not_full[i] = 0
                 still_to_repart -= consumed_this_round
+                i+=1
                 
                 
         
