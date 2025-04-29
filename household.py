@@ -125,7 +125,7 @@ class Household:
             else:
                 self.frequency_cooking = 'high'
         if self.frequency_cooking == 'low':
-            self.total_conso_cooking = np.random.randint(0, 200000)  # between 0 and 200 kWh per year
+            self.total_conso_cooking = np.random.randint(10000, 200000)  # between 0 and 200 kWh per year
         elif self.frequency_cooking == 'medium':
             self.total_conso_cooking = np.random.randint(200000, 450000)  # between 200 and 450 kWh per year
         else:
@@ -624,6 +624,8 @@ class Household:
                 cycles_power[i] = cycles_energy[i] * 4 / cycle_duration[i]
                 if not self.washing_intelligence : 
                     window = remaining_timesteps / (number_of_cycle - i)
+                    if window <=0:
+                        window = 2
                     cycle_beginning_timestep[i] = last_timestep + np.random.randint(0, window)
                     last_timestep = cycle_beginning_timestep[i] + 16 # we can't start another cycle before 4h
                     remaining_timesteps = week_duration - last_timestep

@@ -345,7 +345,8 @@ class MultiHousehold:
         for year in range(self.n_years):
             self.injection_year[year] = np.sum(self.total_injection[:, year])*0.25
             self.production_year[year] = np.sum(self.production[:, year])
-            self.self_consumption[year] =np.sum(self.total_repartition[:,:,year])*0.25 / np.sum(self.production[:, year])
+            #self.self_consumption[year] =np.sum(self.total_repartition[:,:,year])*0.25 / np.sum(self.production[:, year])
+            self.self_consumption[year] = 1 -(self.injection_year[year]/np.sum(self.production[:,year]))
             for i in range(self.n_households):
                 self.consumption_year[i, year] = np.sum(self.total_electric_consumption[:, i, year])*0.25
                 self.repartition_year[i, year] = np.sum(self.total_repartition[:, i, year])*0.25

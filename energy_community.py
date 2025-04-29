@@ -169,6 +169,7 @@ class EnergyCommunity:
             self.time_on = 0  # time_on :  the time the EV stays plugged in the charger (15min timestep),
             self.last_timestep = 0
             self.ev_price = params.get('EV_price', 0) # price of the EV charger (€/kWh)
+            self.func_ev_charger()
         
         """
         
@@ -194,6 +195,7 @@ class EnergyCommunity:
             self.time_off = np.random.randint(1,17)
             self.time_on = 0  # time_on :  the time the EV stays plugged in the charger (15min timestep),
             self.last_timestep = 0
+            
         
         self.consumption = np.zeros(self.n_households)
         self.repartition = np.zeros(self.n_households)
@@ -206,7 +208,7 @@ class EnergyCommunity:
             
 
         
-    def ev_charger(self):
+    def func_ev_charger(self):
         """compute the electric consumption of an ev charger
         """
         for timestep in range(35040):
