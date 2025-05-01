@@ -71,6 +71,7 @@ class MultiHousehold:
         self.heating_is_elec_params = params.get("heating_is_elec_params", [False] * self.n_households)
         self.T_ext_th_params = params.get("T_ext_th_params", [12] * self.n_households)
         self.T_ext_th_night_params = params.get("T_ext_th_night_params", [7] * self.n_households)
+        self.annual_heating_value_params = params.get("annual_heating_value_params", None)
         self.pEB_params = params.get("PEB_params", None)
         self.flat_area_params = params.get("flat_area_params", [100] * self.n_households)
         self.heating_eff_params = params.get("heating_eff_params", [1] * self.n_households)
@@ -214,6 +215,8 @@ class MultiHousehold:
                 "grid_price_day": self.grid_price_day_params[i],
                 "grid_price_night": self.grid_price_night_params[i]
             }
+            if self.annual_heating_value_params is not None:
+                params["annual_heating_value_m2"] = self.annual_heating_value_params[i]
             if self.pEB_params is not None:
                 params["PEB"] = self.pEB_params[i]
             self.households_array.append(Household(params))
@@ -281,6 +284,9 @@ class MultiHousehold:
         self.soc_years = np.zeros((35040, self.n_years))
         if self.enercom.ev_charger : 
             self.ev_charger_from_pv = np.zeros((35040, self.n_years))
+            self.ev_charger_tot_conso = np.sum(self.enercom.ev_powerarray[:]) * 0.25 * 0.001
+            self.ev_total_from_pv = np.zeros(self.n_years)
+            self.ev_share_from_pv = np.zeros(self.n_years)
         
         for year in range(self.n_years):
             for i in range(35040):
@@ -297,6 +303,10 @@ class MultiHousehold:
                         else :
                             self.ev_charger_from_pv[i, year] = self.total_injection[i, year]
                             self.total_injection[i, year] = 0
+            if self.enercom.ev_charger :
+                self.ev_total_from_pv[year] = np.sum(self.ev_charger_from_pv[:,year])
+                self.ev_share_from_pv[year] = self.ev_total_from_pv[year] / self.ev_charger_tot_conso
+        
                     
                 
     def compute_metrics(self):
@@ -434,8 +444,17 @@ class MultiHousehold:
         if self.enercom.ev_charger:
             np.savetxt(os.path.join(self.output_dir, "ev_charger.csv"), self.ev_charger_from_pv, delimiter=",", fmt="%.1f")
             self.evarray = self.total_revenue_from_ev
+            self.ev_conso = [self.ev_charger_tot_conso,0]
+            for i in range(len(self.ev_total_from_pv)):
+                self.ev_conso.append(self.ev_total_from_pv[i])
+            self.ev_conso.append(0)
+            for i in range(len(self.ev_share_from_pv)):
+                self.ev_conso.append(self.ev_share_from_pv[i])
+            
+            self.ev_conso = np.array(self.ev_conso)
         else:
             self.evarray = np.zeros((self.n_years))
+            self.ev_conso = np.array([0])
         
         
         self.array_title = np.array(["cooking", "cold_sources", "other", "washing_utilities"])
@@ -447,6 +466,7 @@ class MultiHousehold:
             'revenue without sharing': self.total_revenue_without_pv,
             'revenue with sharing': self.total_revenue_with_pv,
             'revenue from EV': self.evarray,
+            'EV consumption/from pv/share from pv': self.ev_conso,
             'self consumption': self.self_consumption.T,
             'self sufficiency': self.self_sufficiency,
             'total injection': self.injection_year.T,

@@ -161,15 +161,27 @@ class EnergyCommunity:
             self.battery_soc = 0.2*self.battery_capacity # state of charge of the battery (Wh)
         
         self.ev_charger = params.get('EV_charger', False) # if false, not taken into account
+        self.ev_price = params.get('EV_price', 0) # price of the EV charger (€/kWh)
+
         if self.ev_charger : 
-            self.ev_powerarray = np.zeros(35040)
-            self.ev_power = params.get('EV_power', 7400) # power of the EV charger (W)
-            self.is_on = False
-            self.time_off = np.random.randint(1,17)
-            self.time_on = 0  # time_on :  the time the EV stays plugged in the charger (15min timestep),
-            self.last_timestep = 0
-            self.ev_price = params.get('EV_price', 0) # price of the EV charger (€/kWh)
-            self.func_ev_charger()
+            self.ev_file = params.get('EV_file', -1) # file containing the EV consumption (Wh)
+            if self.ev_file == -1:
+                self.ev_powerarray = np.zeros(35040)
+                self.ev_power = params.get('EV_power', 7400) # power of the EV charger (W)
+                self.is_on = False
+                self.time_off = np.random.randint(1,17)
+                self.time_on = 0  # time_on :  the time the EV stays plugged in the charger (15min timestep),
+                self.last_timestep = 0
+                self.ev_price = params.get('EV_price', 0) # price of the EV charger (€/kWh)
+                self.func_ev_charger()
+            else : 
+                self.ev_powerarray = np.zeros(35040)
+                self.ev_price = params.get('EV_price', 0) # price of the EV charger (€/kWh)
+
+                self.func_load_ev()
+                
+
+            
         
         """
         
@@ -207,7 +219,19 @@ class EnergyCommunity:
         self.total_G = np.zeros((8760,self.n_years))
             
 
-        
+    def func_load_ev(self):
+        """load the EV consumption from the file
+        """
+        if self.ev_file != -1:
+            df = pd.read_csv(self.ev_file, sep=",",parse_dates=["timestamp"], skiprows=1, names=["timestamp", "Charging Profile"])
+            df = df.set_index("timestamp").resample("15min").first().reset_index()
+            valeurs_array = df["Charging Profile"].to_numpy()
+            self.ev_powerarray = np.zeros(35040)
+            if self.ev_powerarray.shape[0] <= len(valeurs_array):
+                self.ev_powerarray[:] = valeurs_array[0:self.ev_powerarray.shape[0]]*1000
+            else : 
+                self.ev_powerarray[0:len(valeurs_array)] = valeurs_array*1000
+
     def func_ev_charger(self):
         """compute the electric consumption of an ev charger
         """
@@ -585,15 +609,16 @@ class EnergyCommunity:
             
             total_conso = sum(conso_not_full)
             for i in range(len(conso_not_full)):
-                available = still_to_repart * conso_not_full[i] / total_conso
-                if conso_not_full[i] > available:
-                    repartition[i] += available
-                    reparti += available
-                    conso_not_full[i] -= available
-                else:
-                    repartition[i] += conso_not_full[i]
-                    reparti += conso_not_full[i]
-                    conso_not_full[i] = 0
+                if total_conso>0:
+                    available = still_to_repart * conso_not_full[i] / total_conso
+                    if conso_not_full[i] > available:
+                        repartition[i] += available
+                        reparti += available
+                        conso_not_full[i] -= available
+                    else:
+                        repartition[i] += conso_not_full[i]
+                        reparti += conso_not_full[i]
+                        conso_not_full[i] = 0
                     
         self.injected_to_grid = production - reparti
         self.repartition = repartition

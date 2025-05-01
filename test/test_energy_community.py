@@ -262,4 +262,14 @@ def test_shadowing_impact():
     print(mean_production)
     
     
-test_shadowing_impact()
+#test_shadowing_impact()
+
+def test_load_ev():
+    params['EV_charger'] = True
+    params['EV_file'] = 'C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/ev_charging_profile/Charging_Profiles_20ev.csv'
+    
+    ener = EnergyCommunity(params)
+    plt.plot(ener.ev_powerarray)
+    plt.show()
+
+test_load_ev()

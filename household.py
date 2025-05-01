@@ -174,27 +174,28 @@ class Household:
         self.load_heating = np.zeros((35040, self.n_year_temp_data))
         self.total_consumption = np.zeros((35040, self.n_year_temp_data)) 
         if self.heating_is_elec:
-
-            try :
-                self.peb = params['PEB']
-            except:
-                ValueError("Please provide a PEB value. If not known, please provide an estimation.")
-            if self.peb == 'A':
-                self.annual_heating_value_m2 = np.random.randint(25, 46)
-            elif self.peb == 'B':
-                self.annual_heating_value_m2 = np.random.randint(46, 96)
-            elif self.peb == 'C':
-                self.annual_heating_value_m2 = np.random.randint(96, 151)
-            elif self.peb == 'D':
-                self.annual_heating_value_m2 = np.random.randint(151, 211)
-            elif self.peb == 'E':
-                self.annual_heating_value_m2 = np.random.randint(211, 276)
-            elif self.peb == 'F':
-                self.annual_heating_value_m2 = np.random.randint(276, 346)
-            elif self.peb == 'G':
-                self.annual_heating_value_m2 = np.random.randint(346, 450)
-            else:
-                ValueError("PEB value not recognized")
+            self.annual_heating_value_m2 = params.get('annual_heating_value_m2', -1)
+            if self.annual_heating_value_m2 == -1:
+                try :
+                    self.peb = params['PEB']
+                except:
+                    ValueError("Please provide a PEB value. If not known, please provide an estimation.")
+                if self.peb == 'A':
+                    self.annual_heating_value_m2 = np.random.randint(25, 46)
+                elif self.peb == 'B':
+                    self.annual_heating_value_m2 = np.random.randint(46, 96)
+                elif self.peb == 'C':
+                    self.annual_heating_value_m2 = np.random.randint(96, 151)
+                elif self.peb == 'D':
+                    self.annual_heating_value_m2 = np.random.randint(151, 211)
+                elif self.peb == 'E':
+                    self.annual_heating_value_m2 = np.random.randint(211, 276)
+                elif self.peb == 'F':
+                    self.annual_heating_value_m2 = np.random.randint(276, 346)
+                elif self.peb == 'G':
+                    self.annual_heating_value_m2 = np.random.randint(346, 450)
+                else:
+                    ValueError("PEB value not recognized")
             self.flat_area = params.get('Appartement_area', -1)
             if self.flat_area == -1:
                 r = np.random.rand()
