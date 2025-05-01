@@ -139,6 +139,10 @@ def example_2():
         wh_intelligence_params = True
         #wh_hour_mode = "perfect_knowledge"
         wh_hour_mode = "fixed"
+        if wh_hour_mode == "perfect_knowledge":
+                wh_multiyears_params = [True]*n_households
+        else:
+                wh_multiyears_params = [False]*n_households
         
         params = {
                 "input_directory": input_directory,
@@ -165,6 +169,8 @@ def example_2():
                 "flat_area_params": flat_area_params,
                 "wh_night_params": wh_night,
                 "wh_hour_mode": wh_hour_mode,
+                "wh_multiyears_params": wh_multiyears_params,
+                "wh_intelligence_params" : wh_intelligence_params,
         }
         
         enercom = EnergyCommunity(pv_params)
@@ -178,7 +184,7 @@ def example_2():
         multi.pricing()
         multi.save_results()
         
-#example_2()
+example_2()
 
 def compute_roi():
         pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
@@ -502,7 +508,7 @@ def plot_graph_pv_bat():
         plt.show()
         
         
-plot_graph_pv_bat()
+#plot_graph_pv_bat()
 
 def example_2_with_ev():
         pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,

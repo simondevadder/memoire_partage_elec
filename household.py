@@ -1,22 +1,24 @@
-"""
-Master thesis :  electricity sharing in a multi-unit building
+def nope():
+    """
+    Master thesis :  electricity sharing in a multi-unit building
 
-This file contains the class definition of the household, the goal of this class is to simulate the electric consumption of an household
-The consumption is separated into several categories, that have a load curve associated to them.
-The normalized load curve of certain categories (cookig, laundry, etc) represents the probability that the activity 
-it currently achieved. 
+    This file contains the class definition of the household, the goal of this class is to simulate the electric consumption of an household
+    The consumption is separated into several categories, that have a load curve associated to them.
+    The normalized load curve of certain categories (cookig, laundry, etc) represents the probability that the activity 
+    it currently achieved. 
 
-To modelize the variablity of the consumption, at each time step, we will compute whether each activity is carried out or not,
-and if it is, it will give out a consumption value. Each activity has a minimum and maximum duration, and a minimum and maximum power consumption.
+    To modelize the variablity of the consumption, at each time step, we will compute whether each activity is carried out or not,
+    and if it is, it will give out a consumption value. Each activity has a minimum and maximum duration, and a minimum and maximum power consumption.
 
-page 37 du documents : 
-    thermique : 47.3%, dont 72% pour l'eau chaude
-    froid : 11.2%
-    audiovisuel, lavage, cuisine : 6 à 7% chacun
-    autres : 10% environ
-    
-    /!\ EV à prendre en compte (conso X2)
-"""
+    page 37 du documents : 
+        thermique : 47.3%, dont 72% pour l'eau chaude
+        froid : 11.2%
+        audiovisuel, lavage, cuisine : 6 à 7% chacun
+        autres : 10% environ
+        
+        /!\ EV à prendre en compte (conso X2)
+    """
+    pass
 
 import numpy as np
 import pandas as pd
@@ -115,6 +117,7 @@ class Household:
         self.is_cooking = False
         self.time_cooking = 0
         self.time_not_cooking = 0
+        self.n_year_temp_data = 3
         self.frequency_cooking = params.get("cooking activity", -1)
         if self.frequency_cooking == -1:
             r = np.random.rand()
@@ -449,14 +452,26 @@ class Household:
                 else :
                     wh_beginning_hour = np.random.randint(32,64)
             else : 
-                if self.wh_hours_begin == -1:
-                    proba_wh=[3.8,10.6,14.9,17,17.9,16.2,11.9,7.7]  # proba taken with the power generated on a east west surface in winter
-                    proba_wh = np.array(proba_wh) / sum(proba_wh)
-                    taken = np.random.choice(range(8), p=proba_wh)
-                    quartil = np.random.randint(0, 4)    
-                    wh_beginning_hour = 8*4 +taken * 4 + quartil  #start at 9am (3.8%) until 4pm
-                else:
+                try :
+                    if self.wh_hours_begin == -1:
+                        proba_wh=[3.8,10.6,14.9,17,17.9,16.2,11.9,7.7]  # proba taken with the power generated on a east west surface in winter
+                        proba_wh = np.array(proba_wh) / sum(proba_wh)
+                        taken = np.random.choice(range(8), p=proba_wh)
+                        quartil = np.random.randint(0, 4)    
+                        wh_beginning_hour = 8*4 +taken * 4 + quartil  #start at 9am (3.8%) until 4pm
+                    else:
+                        if not self.wh_multiyears:
+                            wh_beginning_hour = int(self.wh_hours_begin*4)  # if wh_multiyear, wh_beginning_hour will be an array
+                        else: 
+                            for i in range(self.n_year_temp_data):
+                                wh_beginning_hour[i] = int(self.wh_hours_begin[i]*4)
+                except:
+                    if not self.wh_multiyears:
                         wh_beginning_hour = int(self.wh_hours_begin*4)  # if wh_multiyear, wh_beginning_hour will be an array
+                    else: 
+                        wh_beginning_hour = np.zeros(self.n_year_temp_data, dtype=int)
+                        for i in range(self.n_year_temp_data):
+                            wh_beginning_hour[i] = int(self.wh_hours_begin[i]*4)
             
             wh_duration = np.random.randint(6, 11) # entre 1h30 et 2h30
             
@@ -466,8 +481,15 @@ class Household:
             else :
                 wh_duration  = int(wh_duration * 0.65)
                 
-            wh_index_begin = (self.day - 1) * 24 * 4 + wh_beginning_hour  # will be an array if multiyear
-            wh_index_end = wh_index_begin + wh_duration    # will be an array if multiyear
+            if not self.wh_multiyears:
+                wh_index_begin = (self.day - 1) * 24 * 4 + wh_beginning_hour  # will be an array if multiyear
+                wh_index_end = wh_index_begin + wh_duration    # will be an array if multiyear
+            else :
+                wh_index_begin = np.zeros(self.n_year_temp_data, dtype=int)
+                wh_index_end = np.zeros(self.n_year_temp_data, dtype=int)
+                for i in range(self.n_year_temp_data):
+                    wh_index_begin[i] = (self.day - 1) * 24 * 4 + wh_beginning_hour[i]
+                    wh_index_end[i] = wh_index_begin[i] + wh_duration
             if not self.wh_multiyears:
                 self.consumption[wh_index_begin:wh_index_end] += self.wh_power
                 self.load_wh[wh_index_begin:wh_index_end] += self.wh_power

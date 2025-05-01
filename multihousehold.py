@@ -89,18 +89,17 @@ class MultiHousehold:
         self.grid_price_type_params = params.get("grid_price_type_params", ["bi"] * self.n_households)
         self.grid_price_day_params = params.get("grid_price_day_params", [-1] * self.n_households)
         self.grid_price_night_params = params.get("grid_price_night_params", [-1] * self.n_households)
-        self.households_array = self.create_households()
         
         
         self.enercom = energcom
         self.production = self.enercom.total_production   # is an array of 8760*n_years (usually 3)
         self.n_years = self.enercom.n_years
-        
+        self.wh_multiyears_params = params.get("wh_multiyears_params", [False] * self.n_households)
+
 
         self.households_array = self.create_households()
-        
         if self.wh_intelligence_params:
-            self.wh_hours_mode= params.get("wh_hours_mode", "fixed")
+            self.wh_hours_mode= params.get("wh_hour_mode", "fixed")
 
             if self.wh_hours_mode == "perfect_knowledge":
                 self.wh_hours_begin_all = np.zeros((self.n_households, 365, self.n_years))
@@ -195,12 +194,13 @@ class MultiHousehold:
                 "wh_usage": self.wh_capacity_params[i],
                 "wh_intelligence": self.wh_intelligence_params,
                 "wh_night": self.wh_night_params[i],
+                "wh_multiyears": self.wh_multiyears_params[i],
                 "heating_is_elec": self.heating_is_elec_params[i],
-                "T_ext_th": self.T_ext_th_params[i],
-                "T_ext_th_night": self.T_ext_th_night_params[i],
+                "T_ext_threshold": self.T_ext_th_params[i],
+                "T_ext_threshold_night": self.T_ext_th_night_params[i],
                 "heating_efficiency": self.heating_eff_params[i],
-                "flat_area": self.flat_area_params[i],
-                "n_cold_sources": self.n_cold_source_params[i],
+                "Appartement_area": self.flat_area_params[i],
+                "number_cold_sources": self.n_cold_source_params[i],
                 "have_washing_machine": self.have_wm_params[i],
                 "washing_frequency": self.wm_frequency_params[i],
                 "washing_intelligence": self.wm_intelligence_params[i],
@@ -253,10 +253,13 @@ class MultiHousehold:
         """
         self.total_electric_consumption = np.zeros((35040, self.n_households, self.n_years))
         index = 0
+        self.total_wh = np.zeros((35040))
         for household in self.households_array:
             for i in range(365):
 
                 household.cooking_this_day()
+                if self.wh_hours_mode == "perfect_knowledge":
+                    household.wh_hours_begin = self.wh_hours_begin_all[index, i, :]
                 household.electric_water_heater()
                 household.cold_sources()
                 household.electric_heating()
@@ -266,14 +269,18 @@ class MultiHousehold:
                 household.day += 1
             
             for year in range(household.n_year_temp_data):
+                
                 if household.wh_multiyears:
                     household.total_consumption[:, year] = household.consumption + household.load_heating[:, year] + household.load_wh[:, year]
+                    self.total_wh[:, year] += household.load_wh[:, year]
                 else :
                     household.total_consumption[:, year] = household.consumption + household.load_heating[:,year]
+            if not household.wh_multiyears:
+                    self.total_wh[:] += household.load_wh[:]
             
             self.total_electric_consumption[:, index, :] = household.total_consumption
             index += 1
-            
+        
     def repartition_elec(self):
         """ Repartition of the electricity amoung the households
         """
@@ -282,6 +289,7 @@ class MultiHousehold:
         self.total_from_grid = np.zeros((35040,self.n_households, self.n_years))
         self.total_injection = np.zeros((35040, self.n_years ))
         self.soc_years = np.zeros((35040, self.n_years))
+        self.heating_elec_m2 = np.zeros((35040, self.n_households, self.n_years))
         if self.enercom.ev_charger : 
             self.ev_charger_from_pv = np.zeros((35040, self.n_years))
             self.ev_charger_tot_conso = np.sum(self.enercom.ev_powerarray[:]) * 0.25 * 0.001
@@ -290,6 +298,9 @@ class MultiHousehold:
         
         for year in range(self.n_years):
             for i in range(35040):
+                for ind in range(len(self.households_array)):
+                    if self.households_array[ind].heating_is_elec:
+                        self.heating_elec_m2[i, ind, year] = self.households_array[ind].load_heating[i, year] / self.households_array[ind].flat_area #in Watt/m2
                 consumption_to_rep = self.total_electric_consumption[i, :, year]
                 production_to_rep = self.production[i//4, year]
                 self.total_repartition[i, :, year], self.total_from_grid[i, :, year], self.total_injection[i, year] = self.enercom.func_repartition(consumption_to_rep, production_to_rep)
@@ -423,7 +434,9 @@ class MultiHousehold:
         self.arr_annual_cost = np.array([self.annualized_investment_cost, 0,0])
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
-        
+        save_load_wh_name = os.path.join(self.output_dir, "load_wh_fixe_total.csv")
+        to_save = self.total_wh
+        np.savetxt(save_load_wh_name, to_save, delimiter=",", fmt="%.1f")
         for year in range(self.n_years):
             conso_name = os.path.join(self.output_dir, f"consumption_{year}.csv")
             to_save_conso = self.total_electric_consumption[:, :, year]
@@ -436,6 +449,11 @@ class MultiHousehold:
             from_grid_name = os.path.join(self.output_dir, f"from_grid_{year}.csv")
             to_save_from_grid = self.total_from_grid[:, :, year]
             np.savetxt(from_grid_name, to_save_from_grid, delimiter=",", fmt="%.1f")
+            
+            heating_electric_name = os.path.join(self.output_dir, f"heating_electric_m2_{year}.csv")
+            to_save_heating_electric = self.heating_elec_m2[:,:, year]
+            np.savetxt(heating_electric_name, to_save_heating_electric, delimiter=",", fmt="%.1f")
+            
             
         np.savetxt(os.path.join(self.output_dir, "injection.csv"), self.total_injection, delimiter=",", fmt="%.1f")
         np.savetxt(os.path.join(self.output_dir, "wh.csv"), self.wh_consumption_all, delimiter=",", fmt="%.1f")
