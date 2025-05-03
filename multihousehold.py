@@ -91,6 +91,7 @@ class MultiHousehold:
         self.grid_price_night_params = params.get("grid_price_night_params", [-1] * self.n_households)
         
         
+        
         self.enercom = energcom
         self.production = self.enercom.total_production   # is an array of 8760*n_years (usually 3)
         self.n_years = self.enercom.n_years

@@ -104,7 +104,7 @@ def example_1():
 def example_2():
         
         pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
-                "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [320], "PV_efficiency" : 0.22, "PV_module_size": [1.6, 0.99, 0.008],
+                "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [320], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.991, 0.0075],
                 "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 126792, "estimated_lifetime" : 25, "interest_rate" : 0.03
                 }
         
@@ -127,7 +127,7 @@ def example_2():
         grid_price_day_params=[0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36]
         grid_price_night_params=[0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29]
         heating_is_elec_params = [True]*n_households
-        T_ext_th_params = [12,8,14,11,13,13,11,14,12,10,11,9,13,15,12,12,12,11,13,15,9,8,16,12]
+        T_ext_th_params = [12,9,14,11,13,13,11,13,12,10,11,9,13,15,12,12,12,11,13,14,9,9,14,12]
         T_ext_th_night_params = [7,5,9,9,5,7,6,8,7,8,7,6,5,9,10,7,7,6,8,8,4,5,10,7]
         annual_heating_value_params = [40] * n_households
         #PEB_params = ["A","A", "A", "B", "A", "B", "A", "B", "B","B", "A", "B", "A", "A", "B", "B", "A","B", "A", "A", "A","B", "A","B"]
@@ -348,9 +348,9 @@ def compute_single_home():
 
 def plot_graph_pv_bat():
         pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
-                "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [320], "PV_efficiency" : 0.22, "PV_module_size": [1.6, 0.99, 0.008],
+                "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [320], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.991, 0.0075],
                 "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 126792, "estimated_lifetime" : 25, "interest_rate" : 0.03,
-                "EV_charger" : True, "EV_price" : 0.45, "battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000
+                "battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000
                 }
         
         #"battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000,
@@ -372,7 +372,7 @@ def plot_graph_pv_bat():
         grid_price_day_params=[0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36]
         grid_price_night_params=[0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29]
         heating_is_elec_params = [True]*n_households
-        T_ext_th_params = [12,8,14,11,13,13,11,14,12,10,11,9,13,15,12,12,12,11,13,15,9,8,16,12]
+        T_ext_th_params = [12,9,14,11,13,13,11,13,12,10,11,9,13,15,12,12,12,11,13,14,9,9,14,12]
         T_ext_th_night_params = [7,5,9,9,5,7,6,8,7,8,7,6,5,9,10,7,7,6,8,8,4,5,10,7]
         annual_heating_value_params = [40] * n_households
         #PEB_params = ["A","A", "A", "B", "A", "B", "A", "B", "B","B", "A", "B", "A", "A", "B", "B", "A","B", "A", "A", "A","B", "A","B"]
@@ -384,6 +384,10 @@ def plot_graph_pv_bat():
         wh_intelligence_params = True
         #wh_hour_mode = "perfect_knowledge"
         wh_hour_mode = "fixed"
+        if wh_hour_mode == "perfect_knowledge":
+                wh_multiyears_params = [True]*n_households
+        else:
+                wh_multiyears_params = [False]*n_households
         
         params = {
                 "input_directory": input_directory,
@@ -410,7 +414,11 @@ def plot_graph_pv_bat():
                 "flat_area_params": flat_area_params,
                 "wh_night_params": wh_night,
                 "wh_hour_mode": wh_hour_mode,
+                "wh_multiyears_params": wh_multiyears_params,
+                "wh_intelligence_params" : wh_intelligence_params,
         }
+        
+        
         
         autoconsommation = np.zeros((10, 10))
         autoproduction = np.zeros((10, 10))
@@ -422,8 +430,28 @@ def plot_graph_pv_bat():
         for i in range(10):
                 for j in range(10):
                         pv_params["PV_area"] = [80+92*i]
-                        #pv_params["interest_rate"] = 0.01
-                        pv_params["investment_cost"] = 1500 + 391.54*pv_params["PV_area"][0] # 1000 euro = ondulateur, 500 = main oeuvre base 391.54 = 126792-1500/320
+                        kWc = pv_params["PV_area"][0] * pv_params["PV_efficiency"] 
+                        if kWc <=10:
+                                x = -240
+                                y = 3700
+                                price_per_kwc = x * kWc + y
+                                pv_params["investment_cost"] = price_per_kwc * kWc
+                        elif kWc <=50:
+                                x = -3.75
+                                y = 1337.5
+                                price_per_kwc = x * kWc + y
+                                pv_params["investment_cost"] = price_per_kwc * kWc
+                        elif kWc <=100:
+                                x = -3
+                                y = 1300
+                                price_per_kwc = x * kWc + y
+                                pv_params["investment_cost"] = price_per_kwc * kWc  
+                        else : 
+                                x = -0.66
+                                y = 1066.6
+                                price_per_kwc = x * kWc + y
+                                pv_params["investment_cost"] = price_per_kwc * kWc   
+
                         pv_params["battery_capacity"] = 5000*j
                         enercom = EnergyCommunity(pv_params)
                         enercom.func_compute_total_production()
@@ -432,23 +460,22 @@ def plot_graph_pv_bat():
                         multi.repartition_elec()
                         multi.compute_metrics()
                         multi.pricing()
-                        cost = multi.annualized_investment_cost + 0.05433*5000*j
+                        cost = multi.annualized_investment_cost  + 0.05433*5000*j
                         tot_gain = np.mean(multi.total_revenue_with_pv[:]) + (np.sum(multi.total_price_without_pv[:,:]) - np.sum(multi.total_price_with_pv[:,:]))/24
                         
                         autoconsommation[i, j] = np.mean(multi.self_consumption[:])
                         autoproduction[i, j] = np.mean(multi.self_sufficiency[:,:])
                         #### CV revenue
-                        kWc = pv_params["PV_area"][0] * 220
                         power[i] = kWc
                         bat[j] = pv_params["battery_capacity"]
                         cv_coeff = 0
-                        if kWc < 5000:
+                        if kWc < 5:
                                 cv_coeff = 2.055
-                        elif kWc < 36000:
+                        elif kWc < 36:
                                 cv_coeff = 1.953
-                        elif kWc < 100000:
+                        elif kWc < 100:
                                 cv_coeff = 1.016
-                        elif kWc < 250000:
+                        elif kWc < 250:
                                 cv_coeff = 0.642
                         else : 
                                 cv_coeff = 0.58
@@ -624,6 +651,181 @@ def example_2_with_ev():
         
         
 #example_2_with_ev()
+        
+def gain_pv_power():
+        pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
+                "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [320], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.991, 0.0075],
+                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 126792, "estimated_lifetime" : 25, "interest_rate" : 0.03
+                }
+        
+        #"battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000,
+        #"EV_charger" : True, "EV_price" : 0.45
+        
+
+        input_directory = "pv_example_2"
+        output_directory = "example_2_news"
+        n_households = 24
+        cooking_params = ["low", "medium", "medium", "high", "high", "high", "low", "low", "high", "medium", "medium", "medium", "high", "low", "low", "medium", "low", "medium", "high", "high", "high", "low", "medium", "medium" ]
+        wh_capacity_params = ["low", "medium", "medium", "high", "high", "medium", "low", "low", "medium", "low", "medium", "medium", "high", "low", "medium", "low", "medium", "medium", "medium", "medium", "high", "low", "low", "medium"]
+        n_cold_source_params = [1, 1, 1, 2, 2, 2, 1, 1, 2, 1, 1, 2, 2, 1, 1, 1, 2,2,2,2,2,1,1,2]
+        wm_frequency_params = ["medium", "medium", "medium", "medium", "high", "medium", "low", "low", "medium", "low", "medium", "medium", "high", "low", "low", "low", "medium", "high", "medium", "high", "high", "low", "low", "medium"]
+        have_dryer_params = [False, False, True, False, True, False, False, False, False, False, False, False, True, False, False, False, False, False, False, True, True, False, False, False]
+        dryer_type_params = [None, None, "condensation", None, "evacuation", None, None, None, None, None, None, None, "heat_pump", None, None, None, None, None, None, "evacuation", "condensation", None, None, None]
+        dryer_frequency_params = [None, None, "medium", None, "medium", None, None, None, None, None, None, None, "low", None, None, None, None, None, None, "medium", "low", None, None, None]
+        have_dw_params = [False, True, True, True, True, True, False, False, True, False, True, True, True, False, False, False, False, True, True, True, True, False, False, False]
+        dw_frequency_params = [None, "low", "medium", "medium", "high", "high", None, None, "medium", None, "low", "high", "medium", None, None, None, None, "medium", "low", "medium", "low", None, None, None]
+        grid_price_day_params=[0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36]
+        grid_price_night_params=[0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29]
+        heating_is_elec_params = [True]*n_households
+        T_ext_th_params = [12,8,14,11,13,13,11,13,12,10,11,9,13,14,12,12,12,11,13,14,9,8,14,12]
+        T_ext_th_night_params = [7,5,9,9,5,7,6,8,7,8,7,6,5,9,10,7,7,6,8,8,4,5,10,7]
+        annual_heating_value_params = [40] * n_households
+        #PEB_params = ["A","A", "A", "B", "A", "B", "A", "B", "B","B", "A", "B", "A", "A", "B", "B", "A","B", "A", "A", "A","B", "A","B"]
+        heating_eff_params = [3]*n_households
+        
+        flat_area_params = [60,100,120,150,250,120,60,80,100,80,120,150,250,66,100,75,110,120,120,150,250,66,80,90]
+        #wh_night = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
+        wh_night = [False]*n_households
+        wh_intelligence_params = True
+        #wh_hour_mode = "perfect_knowledge"
+        wh_hour_mode = "fixed"
+        if wh_hour_mode == "perfect_knowledge":
+                wh_multiyears_params = [True]*n_households
+        else:
+                wh_multiyears_params = [False]*n_households
+        
+        params = {
+                "input_directory": input_directory,
+                "output_directory": output_directory,
+                "n_households": n_households,
+                "cooking_params": cooking_params,
+                "wh_usage_params": wh_capacity_params,
+                "n_cold_source_params": n_cold_source_params,
+                "wm_frequency_params": wm_frequency_params,
+                "have_dryer_params": have_dryer_params,
+                "dryer_type_params": dryer_type_params,
+                "dryer_frequency_params": dryer_frequency_params,
+                "have_dw_params": have_dw_params,
+                "dw_frequency_params": dw_frequency_params,
+                "grid_price_day_params": grid_price_day_params,
+                "grid_price_night_params": grid_price_night_params,
+                "wh_intelligence_params": wh_intelligence_params,
+                "heating_is_elec_params": heating_is_elec_params,
+                "T_ext_th_params": T_ext_th_params,
+                "T_ext_th_night_params": T_ext_th_night_params,
+                "annual_heating_value_params": annual_heating_value_params,
+                #"PEB_params": PEB_params,
+                "heating_eff_params": heating_eff_params,
+                "flat_area_params": flat_area_params,
+                "wh_night_params": wh_night,
+                "wh_hour_mode": wh_hour_mode,
+                "wh_multiyears_params": wh_multiyears_params,
+                "wh_intelligence_params" : wh_intelligence_params,
+        }
+        area_array = np.linspace(20,600, 20)
+        kWc_array = area_array * pv_params["PV_efficiency"] 
+        interest_rate_array = np.array([0.0,0.01,0.02,0.03,0.04])
+        gain_array = np.zeros((len(area_array), len(interest_rate_array)))
+        cost_array = np.zeros((len(area_array), len(interest_rate_array)))
+        rev_array = np.zeros((len(area_array), len(interest_rate_array)))
+        autoconsommation = np.zeros((len(area_array), len(interest_rate_array)))
+        autoproduction = np.zeros((len(area_array), len(interest_rate_array)))
+        
+        for i in range(len(area_array)):
+                for j in range(len(interest_rate_array)):
+                        print(i)
+                        print(j)
+                        pv_params["PV_area"] = [area_array[i]]
+                        kWc = kWc_array[i]
+                        if kWc <=10:
+                                x = -240
+                                y = 3700
+                                price_per_kwc = x * kWc + y
+                                pv_params["investment_cost"] = price_per_kwc * kWc
+                        elif kWc <=50:
+                                x = -3.75
+                                y = 1337.5
+                                price_per_kwc = x * kWc + y
+                                pv_params["investment_cost"] = price_per_kwc * kWc
+                        elif kWc <=100:
+                                x = -3
+                                y = 1300
+                                price_per_kwc = x * kWc + y
+                                pv_params["investment_cost"] = price_per_kwc * kWc  
+                        else : 
+                                x = -0.66
+                                y = 1066.6
+                                price_per_kwc = x * kWc + y
+                                pv_params["investment_cost"] = price_per_kwc * kWc   
+
+                        pv_params["interest_rate"] = interest_rate_array[j]
+                        enercom = EnergyCommunity(pv_params)
+                        #enercom.get_weather_data()
+                        enercom.func_compute_total_production()
+                        #enercom.save_production()
+                        multi = MultiHousehold(params, enercom)
+                        multi.run()
+                        multi.repartition_elec()
+                        multi.compute_metrics()
+                        multi.pricing()
+                        cost  = multi.annualized_investment_cost 
+                        tot_gain = np.mean(multi.total_revenue_with_pv[:]) + (np.sum(multi.total_price_without_pv[:,:]) - np.sum(multi.total_price_with_pv[:,:]))/24
+                        
+                        autoconsommation[i, j] = np.mean(multi.self_consumption[:])
+                        autoproduction[i, j] = np.mean(multi.self_sufficiency[:,:])
+                        #### CV revenue
+                        cv_coeff = 0
+                        if kWc < 5:
+                                cv_coeff = 2.055
+                        elif kWc < 36:
+                                cv_coeff = 1.953
+                        elif kWc < 100:
+                                cv_coeff = 1.016
+                        elif kWc < 250:
+                                cv_coeff = 0.642
+                        else : 
+                                cv_coeff = 0.58
+                        cv_revenue = np.mean(multi.production_year[:]) * cv_coeff * 65 * 10 /(25 * 1000000)
+                        tot_gain += cv_revenue
+                        gain_net = tot_gain - cost
+                        gain_array[i, j] = gain_net
+                        cost_array[i, j] = cost
+                        rev_array[i, j] = tot_gain
+                        print("i", i)
+                        print("j", j)
+                        
+                        #multi.save_results()
+        np.save("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/example_2_new_folder/gain_array.npy", gain_array)
+        np.save("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/example_2_new_folder/cost_array.npy", cost_array)
+        np.save("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/example_2_new_folder/rev_array.npy", rev_array)
+        np.save("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/example_2_new_folder/autoconsommation.npy", autoconsommation)
+        np.save("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/example_2_new_folder/autoproduction.npy", autoproduction)
+        np.save("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/example_2_new_folder/kWc_array.npy", kWc_array)
+        np.save("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/example_2_new_folder/area_array.npy", area_array)
+        np.save("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/example_2_new_folder/interest_rate_array.npy", interest_rate_array)
+        
+        
+        for i in range(len(interest_rate_array)):
+                plt.plot(kWc_array, gain_array[:,i], label = f"interest rate {interest_rate_array[i]}")
+        plt.xlabel("kWc")
+        plt.ylabel("Gain (euro)")
+        plt.legend()
+        plt.show()
+        
+        plt.plot(kWc_array, cost_array[:,0], label = f"interest rate {interest_rate_array[0]}")
+        plt.ylabel("Cost (euro)")
+        plt.legend()
+        plt.show()
+        
+        
+        plt.plot(kWc_array, rev_array[:,0], label = f"interest rate {interest_rate_array[0]}")
+        plt.ylabel("Revenue (euro)")
+        plt.legend()
+        plt.show()
+        
+        
+        
+gain_pv_power()
         
                         
         
