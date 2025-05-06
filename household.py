@@ -396,7 +396,7 @@ class Household:
                 supper = True
         
         ### Breakfast 
-        breakfast_beginning_hour = np.random.randint(24, 37)  # between 6h and 9h
+        breakfast_beginning_hour = np.random.randint(24, 39)  # between 6h and 9h
         breakfast_duration = np.random.randint(1, 3)
         breakfast_wh = np.random.randint(0, int(self.total_conso_cooking * 0.1 * 2 /365)) # 10% of power for breakfast, 365 breakfast per year
         breakfast_power = breakfast_wh*4 / breakfast_duration # in W 
@@ -410,7 +410,8 @@ class Household:
         ### Lunch
         
         if lunch : 
-            lunch_beginning_hour = np.random.randint(46, 57)  # between 11h30 and 14h
+            #lunch_beginning_hour = np.random.randint(46, 57)  # between 11h30 and 14h
+            lunch_beginning_hour = np.random.randint(40, 63)  # between 10h and 15h30
             lunch_duration = np.random.randint(1, 4)
             if np.random.rand() < 0.8:
                 lunch_wh = 0.2 * self.total_conso_cooking / (806.27)  # 241.88 lunch per year, 30%of power, 3/(10*241.88) = 1/806.27  
@@ -425,7 +426,8 @@ class Household:
             
         ### supper
         if supper : 
-            supper_beginning_hour = np.random.randint(72, 87)  # between 18h and 21h30
+            #supper_beginning_hour = np.random.randint(72, 87)  # between 18h and 21h30
+            supper_beginning_hour = np.random.randint(64, 87)  # between 15h and 21h30
             supper_duration = np.random.randint(1, 7)
             p = self.total_conso_cooking  /(520.55)  # 60% of power for supper, 312.33 supper per year
             supper_wh = np.random.randint(int(p/2), int(3*p/2)) # 60% of power for supper, 312.33 supper per year

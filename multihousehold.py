@@ -293,7 +293,7 @@ class MultiHousehold:
         self.heating_elec_m2 = np.zeros((35040, self.n_households, self.n_years))
         if self.enercom.ev_charger : 
             self.ev_charger_from_pv = np.zeros((35040, self.n_years))
-            self.ev_charger_tot_conso = np.sum(self.enercom.ev_powerarray[:]) * 0.25 * 0.001
+            self.ev_charger_tot_conso = np.sum(self.enercom.ev_powerarray[:]) * 0.25 
             self.ev_total_from_pv = np.zeros(self.n_years)
             self.ev_share_from_pv = np.zeros(self.n_years)
         
@@ -316,7 +316,7 @@ class MultiHousehold:
                             self.ev_charger_from_pv[i, year] = self.total_injection[i, year]
                             self.total_injection[i, year] = 0
             if self.enercom.ev_charger :
-                self.ev_total_from_pv[year] = np.sum(self.ev_charger_from_pv[:,year])
+                self.ev_total_from_pv[year] = np.sum(self.ev_charger_from_pv[:,year])*0.25
                 self.ev_share_from_pv[year] = self.ev_total_from_pv[year] / self.ev_charger_tot_conso
         
                     
@@ -345,16 +345,24 @@ class MultiHousehold:
         self.washing_utilities_all = np.zeros((self.n_households))
         
         self.wh_consumption_all = np.zeros((35040, self.n_years))
+        self.cooking_consumption_all = np.zeros((35040))
+        self.cold_all = np.zeros((35040))
+        self.other_consumption_all = np.zeros((35040))
+        self.washing_all = np.zeros((35040))
         
         ind = 0
         for household in self.households_array:
             self.cooking_all[ind] = np.sum(household.cooking)*0.25
+            self.cooking_consumption_all[:] += household.cooking[:]
+            self.cold_all[:] += household.cold[:]
+            self.other_consumption_all[:] += household.other_power[:]
+            self.washing_all[:] += household.washing_usage[:]
             if household.wh_multiyears:
                 self.wh_all[ind, :] = np.sum(household.load_wh, axis=0)*0.25
-                self.wh_consumption_all[:, :] += household.load_wh * 0.25
+                self.wh_consumption_all[:, :] += household.load_wh 
             else:
                 self.wh_all[ind, 0] = np.sum(household.load_wh)*0.25
-                self.wh_consumption_all[:, 0] += household.load_wh * 0.25
+                self.wh_consumption_all[:, 0] += household.load_wh #still in Watt
             self.cold_sources_all[ind] = np.sum(household.cold)*0.25
             self.other_all[ind] = np.sum(household.other_power)*0.25
             self.washing_utilities_all[ind] = np.sum(household.washing_usage)*0.25
@@ -458,6 +466,10 @@ class MultiHousehold:
             
         np.savetxt(os.path.join(self.output_dir, "injection.csv"), self.total_injection, delimiter=",", fmt="%.1f")
         np.savetxt(os.path.join(self.output_dir, "wh.csv"), self.wh_consumption_all, delimiter=",", fmt="%.1f")
+        np.savetxt(os.path.join(self.output_dir, "cooking.csv"), self.cooking_consumption_all, delimiter=",", fmt="%.1f")
+        np.savetxt(os.path.join(self.output_dir, "cold.csv"), self.cold_all, delimiter=",", fmt="%.1f")
+        np.savetxt(os.path.join(self.output_dir, "other.csv"), self.other_consumption_all, delimiter=",", fmt="%.1f")
+        np.savetxt(os.path.join(self.output_dir, "washing.csv"), self.washing_all, delimiter=",", fmt="%.1f")
         if self.enercom.battery:
             np.savetxt(os.path.join(self.output_dir, "soc.csv"), self.soc_years, delimiter=",", fmt="%.1f")
         if self.enercom.ev_charger:
