@@ -10,6 +10,8 @@ from datetime import date
 import datetime
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
 
 class EnergyCommunity:
     
@@ -178,7 +180,7 @@ class EnergyCommunity:
                 self.ev_powerarray = np.zeros(35040)
                 self.ev_price = params.get('EV_price', 0) # price of the EV charger (€/kWh)
 
-                self.func_load_ev()
+                self.func_load_ev_2()
                 
 
             
@@ -228,9 +230,40 @@ class EnergyCommunity:
             valeurs_array = df["Charging Profile"].to_numpy()
             self.ev_powerarray = np.zeros(35040)
             if self.ev_powerarray.shape[0] <= len(valeurs_array):
-                self.ev_powerarray[:] = valeurs_array[0:self.ev_powerarray.shape[0]]*1000
+                self.ev_powerarray[:] = valeurs_array[0:self.ev_powerarray.shape[0]]
             else : 
-                self.ev_powerarray[0:len(valeurs_array)] = valeurs_array*1000
+                self.ev_powerarray[0:len(valeurs_array)] = valeurs_array
+                
+    def func_load_ev_2(self):
+        """load the EV consumption from the file
+        """
+        if self.ev_file != -1:
+            df = pd.read_csv(self.ev_file, sep=",")
+            df["time"] = pd.to_datetime(df["time"])
+            df = df.set_index("time").resample("15min").ffill().reset_index()
+            valeurs_array = df["evse_3_wh"].to_numpy()
+            self.ev_powerarray = np.zeros(35040)
+            if self.ev_powerarray.shape[0] <= len(valeurs_array):
+                self.ev_powerarray[:] = valeurs_array[0:self.ev_powerarray.shape[0]]
+            else : 
+                self.ev_powerarray[0:len(valeurs_array)] = valeurs_array
+            #date_range = pd.date_range(start="2023-01-01", periods=35040, freq="15min")
+            
+            # plt.plot(date_range, self.ev_powerarray/1000)
+
+            # # Afficher un label de mois tous les 1er du mois
+            # plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
+            # plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+
+            # #plt.gca().set_xticks([d for d in date_range if d.day == 1 and d.hour == 0 and d.minute == 0])
+            # #plt.gca().set_xticklabels([d.strftime('%b') for d in date_range if d.day == 1 and d.hour == 0 and d.minute == 0])
+
+            # plt.xlabel("Time")
+            # plt.ylabel("Power (kW)")
+            # plt.title("EV charging station")
+            # plt.tight_layout()
+            # plt.show()
+        
 
     def func_ev_charger(self):
         """compute the electric consumption of an ev charger

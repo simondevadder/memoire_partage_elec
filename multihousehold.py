@@ -152,6 +152,49 @@ class MultiHousehold:
         self.wh_hours_begin_all = np.zeros((self.n_households, 365, self.n_years))
         self.wh_hours_begin = np.zeros((self.n_households))
       
+    
+    
+    def clean_production(self):
+        """Clean every arrays that are linked to the production (keep the demand), used to vary the production 
+        """
+        self.total_repartition = np.zeros((35040, self.n_households, self.n_years))
+        self.total_from_grid = np.zeros((35040, self.n_households, self.n_years))
+        self.total_injection = np.zeros((35040, self.n_years))
+        self.soc_years = np.zeros((35040, self.n_years))
+        self.ev_charger_from_pv = np.zeros((35040, self.n_years))
+        self.total_revenue_from_ev = np.zeros((self.n_years))
+        self.total_paid_by_ev = np.zeros((self.n_years))
+        self.self_consumption = np.zeros((self.n_years))
+        self.self_sufficiency = np.zeros((self.n_households, self.n_years))
+        self.injection_year = np.zeros((self.n_years))
+        self.production_year = np.zeros((self.n_years))
+        self.consumption_year = np.zeros((self.n_households, self.n_years))
+        self.repartition_year = np.zeros((self.n_households, self.n_years))
+        self.cooking_all = np.zeros((self.n_households))
+        self.wh_all = np.zeros((self.n_households, self.n_years))
+        self.cold_sources_all = np.zeros((self.n_households))
+        self.electric_heating_all = np.zeros((self.n_households, self.n_years))
+        self.other_all = np.zeros((self.n_households))
+        self.washing_utilities_all = np.zeros((self.n_households))
+        self.wh_consumption_all = np.zeros((35040, self.n_years))
+        self.total_price_without_pv = np.zeros((self.n_households, self.n_years))
+        self.total_price_with_pv = np.zeros((self.n_households, self.n_years))
+        self.total_revenue_without_pv = np.zeros((self.n_years))
+        self.total_revenue_with_pv = np.zeros((self.n_years))
+        self.total_conso_night = np.zeros((self.n_households, self.n_years))
+        self.total_conso_day = np.zeros((self.n_households, self.n_years))
+        self.total_conso_night_with_pv = np.zeros((self.n_households, self.n_years))
+        self.total_conso_day_with_pv = np.zeros((self.n_households, self.n_years))
+        self.total_conso_from_pv = np.zeros((self.n_households, self.n_years))
+        self.total_revenue_from_ev = np.zeros((self.n_years))
+        self.total_paid_by_ev = np.zeros((self.n_years))
+        self.annualized_investment_cost = 0
+        self.arr_annual_cost = np.zeros((3))
+        self.array_title = np.zeros((4))
+        self.array_to_save = np.zeros((4))
+        self.evarray = np.zeros((self.n_years))
+        self.wh_hours_begin_all = np.zeros((self.n_households, 365, self.n_years))
+        self.wh_hours_begin = np.zeros((self.n_households))
         
     def annual_return_lifetime(self):
         """This function compute the annual return we can expect from the investment. It takes into account the degradation of the 
