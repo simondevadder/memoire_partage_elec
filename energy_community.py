@@ -167,6 +167,7 @@ class EnergyCommunity:
 
         if self.ev_charger : 
             self.ev_file = params.get('EV_file', -1) # file containing the EV consumption (Wh)
+            self.number_ev_charger = params.get('number_ev_charger', 1) # number of EV charger
             if self.ev_file == -1:
                 self.ev_powerarray = np.zeros(35040)
                 self.ev_power = params.get('EV_power', 7400) # power of the EV charger (W)
@@ -242,11 +243,16 @@ class EnergyCommunity:
             df["time"] = pd.to_datetime(df["time"])
             df = df.set_index("time").resample("15min").ffill().reset_index()
             valeurs_array = df["evse_3_wh"].to_numpy()
+            if self.number_ev_charger >1:
+                valeurs_array += df["evse_2_wh"].to_numpy()
+            if self.number_ev_charger >2:
+                valeurs_array += df["evse_1_wh"].to_numpy()
             self.ev_powerarray = np.zeros(35040)
             if self.ev_powerarray.shape[0] <= len(valeurs_array):
                 self.ev_powerarray[:] = valeurs_array[0:self.ev_powerarray.shape[0]]
             else : 
                 self.ev_powerarray[0:len(valeurs_array)] = valeurs_array
+            self.ev_powerarray = np.nan_to_num(self.ev_powerarray, nan=0)
             #date_range = pd.date_range(start="2023-01-01", periods=35040, freq="15min")
             
             # plt.plot(date_range, self.ev_powerarray/1000)

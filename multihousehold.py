@@ -337,6 +337,8 @@ class MultiHousehold:
         if self.enercom.ev_charger : 
             self.ev_charger_from_pv = np.zeros((35040, self.n_years))
             self.ev_charger_tot_conso = np.sum(self.enercom.ev_powerarray[:]) * 0.25 
+            #print("self.enercom.ev_powerarray : ", self.enercom.ev_powerarray)
+            #print("self.ev_charger_tot_conso : ", self.ev_charger_tot_conso)
             self.ev_total_from_pv = np.zeros(self.n_years)
             self.ev_share_from_pv = np.zeros(self.n_years)
         
