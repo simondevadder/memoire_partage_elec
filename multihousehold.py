@@ -96,6 +96,10 @@ class MultiHousehold:
         self.production = self.enercom.total_production   # is an array of 8760*n_years (usually 3)
         self.n_years = self.enercom.n_years
         self.wh_multiyears_params = params.get("wh_multiyears_params", [False] * self.n_households)
+        self.total_electric_consumption = np.zeros((35040, self.n_households, self.n_years))
+        self.total_wh = np.zeros((35040))
+
+
 
 
         self.households_array = self.create_households()

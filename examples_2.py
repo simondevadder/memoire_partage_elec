@@ -105,8 +105,8 @@ def example_2():
         
         pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
                 "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [548], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.991, 0.0075],
-                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 126792, "estimated_lifetime" : 25, "interest_rate" : 0.03,
-                "EV_charger" : True, "EV_price" : 0.3, 'EV_file' : 'C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/ev_charging_profile/data_2023_selected.csv', 'number_ev_charger' : 3
+                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 126792, "estimated_lifetime" : 25, "interest_rate" : 0.03
+                
                 }
         
         #"battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000,
@@ -115,7 +115,7 @@ def example_2():
         
 
         input_directory = "pv_example_2"
-        output_directory = "example_2_13_mai_3ev"
+        output_directory = "example_2_19mai"
         n_households = 24
         cooking_params = ["low", "medium", "medium", "high", "high", "high", "low", "low", "high", "medium", "medium", "medium", "high", "low", "low", "medium", "low", "medium", "high", "high", "high", "low", "medium", "medium" ]
         wh_capacity_params = ["low", "medium", "medium", "high", "high", "medium", "low", "low", "medium", "low", "medium", "medium", "high", "low", "medium", "low", "medium", "medium", "medium", "medium", "high", "low", "low", "medium"]
@@ -225,12 +225,12 @@ def example_2():
         tot_gain = np.mean(multi.total_revenue_with_pv[:]) + (np.sum(multi.total_price_without_pv[:,:]) - np.sum(multi.total_price_with_pv[:,:]))/24
         print("Total gain : ", tot_gain)
         tot_gain += cv_revenue
-        print("Total gain with cv : ", tot_gain)
-        rev_from_ev = np.mean(multi.total_revenue_from_ev[:])
-        print("Total gain from ev : ", rev_from_ev)
-        print("ev_from_pv", multi.ev_total_from_pv)
-        print("ev_share", multi.ev_share_from_pv)
-        print("ev_conso", multi.ev_charger_tot_conso)
+        # print("Total gain with cv : ", tot_gain)
+        # rev_from_ev = np.mean(multi.total_revenue_from_ev[:])
+        # print("Total gain from ev : ", rev_from_ev)
+        # print("ev_from_pv", multi.ev_total_from_pv)
+        # print("ev_share", multi.ev_share_from_pv)
+        # print("ev_conso", multi.ev_charger_tot_conso)
 
         multi.save_results()
         
@@ -1743,12 +1743,16 @@ def change_number_household():
         #compute the repartition as a fonction of the battery power
         print("beginning of the repartition computation")
         optimal_points = {}
+        optimal_gains = {}
+        total_consumption = {}
+        
         for k in range(1, 25):
                 gains = np.zeros((len(bat_array), len(area_array)))
                 autoconsommation = np.zeros((len(bat_array), len(area_array)))
                 autoproduction = np.zeros((len(bat_array), len(area_array))) 
                 annualized_costs_norm = np.zeros((len(bat_array), len(area_array)))
                 net_gain_matrix = np.zeros((len(bat_array), len(area_array)))
+                consumption = np.zeros((len(bat_array), len(area_array)))
                 params["n_households"] = k
                 multi = MultiHousehold(params, enercom_array[0])
                 multi.run()
@@ -1765,20 +1769,20 @@ def change_number_household():
                                 multi.repartition_elec()
                                 multi.compute_metrics()
                                 multi.pricing()
-                                cv_coeff = 0
-                                if kWc < 5:
-                                        cv_coeff = 2.055
-                                elif kWc < 36:
-                                        cv_coeff = 1.953
-                                elif kWc < 100:
-                                        cv_coeff = 1.016
-                                elif kWc < 250:
-                                        cv_coeff = 0.642
-                                else : 
-                                        cv_coeff = 0.58
-                                cv_revenue = np.mean(multi.production_year[:]) * cv_coeff * 65 * 10 /(25 * 1000000)
+                                # cv_coeff = 0
+                                # if kWc < 5:
+                                #         cv_coeff = 2.055
+                                # elif kWc < 36:
+                                #         cv_coeff = 1.953
+                                # elif kWc < 100:
+                                #         cv_coeff = 1.016
+                                # elif kWc < 250:
+                                #         cv_coeff = 0.642
+                                # else : 
+                                #         cv_coeff = 0.58
+                                # cv_revenue = np.mean(multi.production_year[:]) * cv_coeff * 65 * 10 /(25 * 1000000)
                                 tot_gain = np.mean(multi.total_revenue_with_pv[:]) + (np.sum(multi.total_price_without_pv[:,:]) - np.sum(multi.total_price_with_pv[:,:]))/24
-                                tot_gain += cv_revenue
+                                #tot_gain += cv_revenue
                                 #cost = this_enercom.annualized_investment_cost + 0.05433 * bat_array[i]
                                 cost = this_enercom.annualized_investment_cost + 0.03 * bat_array[i]  #300eur/kWh sur 10 ans
                                 annualized_costs_norm[i,j] = cost
@@ -1787,12 +1791,17 @@ def change_number_household():
                                 autoproduction[i, j] = np.mean(multi.self_sufficiency[:,:])
                                 gains[i,j] = tot_gain
                                 net_gain_matrix[i,j] = tot_gain - cost
+                                consumption[i,j] = np.sum(multi.consumption_year[:,:])/3 #sum over 3 years
                                 multi.clean_production()
                 
                 max_indices = np.unravel_index(np.argmax(net_gain_matrix), net_gain_matrix.shape)
                 optimal_points[k] = max_indices
+                optimal_gains[k] = net_gain_matrix[max_indices]
+                total_consumption[k] = consumption[max_indices]
                 print("number of households", k)
                 print("optimal points", optimal_points)
+                print("optimal gains", optimal_gains)
+                print("total consumption", total_consumption)
                 
         kwc_plot = np.zeros(24)
         bat_plot = np.zeros(24)
@@ -1802,22 +1811,250 @@ def change_number_household():
                 this_bat = bat_array[i]
                 this_area = area_array[j]
                 kWc = this_area * pv_params["PV_efficiency"]
+                this_gain = optimal_gains[k]
+                this_consumption = total_consumption[k]
                 kwc_plot[k-1] = kWc
                 bat_plot[k-1] = this_bat
+                print("number of households", k)
                 print("optimal battery capacity", this_bat)
-                print("optimal area", this_area)
+                #print("optimal area", this_area)
                 print("optimal kWc", kWc)
+                print("optimal gain", this_gain)
+                print("total consumption", this_consumption)
+                
+                
         
         plt.plot(kwc_plot)
         plt.show()
         plt.plot(bat_plot)
         plt.show()
         
-change_number_household()
+#change_number_household()
 
+
+def example_with_other_data():
+               
+        pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
+                "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [548], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.991, 0.0075],
+                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 126792, "estimated_lifetime" : 25, "interest_rate" : 0.03
+                }
+        #"EV_charger" : True, "EV_price" : 0.3, 'EV_file' : 'C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/ev_charging_profile/data_2023_selected.csv', 'number_ev_charger' : 3
+        file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/data/individual+household+electric+power+consumption/household_power_consumption_24.npy"
+        consumption_household = np.load(file)
+        consumption_household = np.nan_to_num(consumption_household, nan=0)
         
-        
+        enercom = EnergyCommunity(pv_params)
+        #enercom.get_weather_data()
+        enercom.func_compute_total_production()
+        grid_price_day_params=[0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36]
+        grid_price_night_params=[0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29]
+
+        params = {
+                "n_households": 24,
+                "input_directory" : "pv_example_2",
+                "output_directory" : "19_may_other_data",
+                "grid_price_day_params": grid_price_day_params,
+                "grid_price_night_params": grid_price_night_params,
                 
+        }
+        multi = MultiHousehold(params, enercom)
+        for year in range(3):
+                multi.total_electric_consumption[:,:,year] = consumption_household
+        multi.repartition_elec()
+       
+        multi.compute_metrics()
+        print("production", multi.production_year)
+        print("injection", multi.injection_year)
+        print("self_consumption", multi.self_consumption)
+        #print("total repartition", multi.total_repartition)
+        multi.pricing()
+        
+        cv_coeff = 0
+        kWc = pv_params["PV_area"][0] * pv_params["PV_efficiency"]
+        if kWc < 5:
+                cv_coeff = 2.055
+        elif kWc < 36:
+                cv_coeff = 1.953
+        elif kWc < 100:
+                cv_coeff = 1.016
+        elif kWc < 250:
+                cv_coeff = 0.642
+        else : 
+                cv_coeff = 0.58
+        cv_revenue = np.mean(multi.production_year[:]) * cv_coeff * 65 * 10 /(25 * 1000000)
+        print("Annualized revenue from cv : ", cv_revenue)
+        cost = multi.annualized_investment_cost  #+ 0.05433*10000
+        print("Annualized cost : ", cost)
+        tot_gain = np.mean(multi.total_revenue_with_pv[:]) + (np.sum(multi.total_price_without_pv[:,:]) - np.sum(multi.total_price_with_pv[:,:]))/24
+        print("Total gain : ", tot_gain)
+        tot_gain += cv_revenue
+        print("Total gain with cv : ", tot_gain)
+        #rev_from_ev = np.mean(multi.total_revenue_from_ev[:])
+        #print("Total gain from ev : ", rev_from_ev)
+        #print("ev_from_pv", multi.ev_total_from_pv)
+        #print("ev_share", multi.ev_share_from_pv)
+        #print("ev_conso", multi.ev_charger_tot_conso)
+
+        multi.save_results()
+#example_with_other_data()
+        
+def price_bat_pv_other_var():
+        
+        pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
+                "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [548], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.991, 0.0075],
+                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 126792, "estimated_lifetime" : 25, "interest_rate" : 0.03
+                }
+        #"EV_charger" : True, "EV_price" : 0.3, 'EV_file' : 'C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/ev_charging_profile/data_2023_selected.csv', 'number_ev_charger' : 3
+        file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/data/individual+household+electric+power+consumption/household_power_consumption_24.npy"
+        consumption_household = np.load(file)
+        consumption_household = np.nan_to_num(consumption_household, nan=0)
+        
+        enercom = EnergyCommunity(pv_params)
+        #enercom.get_weather_data()
+        enercom.func_compute_total_production()
+        grid_price_day_params=[0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36]
+        grid_price_night_params=[0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29]
+
+        params = {
+                "n_households": 24,
+                "input_directory" : "pv_example_2",
+                "output_directory" : "19_may_other_data_var",
+                "grid_price_day_params": grid_price_day_params,
+                "grid_price_night_params": grid_price_night_params,        
+        }
+        multi = MultiHousehold(params, enercom)
+        
+        enercom_array = []
+        
+        area_array = np.linspace(20,600, 10)
+        #area_array = np.linspace(500,600, 10)
+        kWc_array = area_array * pv_params["PV_efficiency"]
+        bat_array = np.linspace(0,30000, 10)
+        #bat_array = np.linspace(5000,10000, 10)
+       
+        ################Compute the production
+        print("beginning of the production computation")
+        for i in range(len(area_array)):
+                print("i", i)
+                pv_params["PV_area"] = [area_array[i]]
+                kWc = kWc_array[i]
+                if kWc <=10:
+                        x = -240
+                        y = 3700
+                        price_per_kwc = x * kWc + y
+                        pv_params["investment_cost"] = price_per_kwc * kWc
+                elif kWc <=50:
+                        x = -3.75
+                        y = 1337.5
+                        price_per_kwc = x * kWc + y
+                        pv_params["investment_cost"] = price_per_kwc * kWc
+                elif kWc <=100:
+                        x = -3
+                        y = 1300
+                        price_per_kwc = x * kWc + y
+                        pv_params["investment_cost"] = price_per_kwc * kWc  
+                else : 
+                        x = -0.66
+                        y = 1066.6
+                        price_per_kwc = x * kWc + y
+                        pv_params["investment_cost"] = price_per_kwc * kWc
+                this_enercom = EnergyCommunity(pv_params)   
+                this_enercom.func_compute_total_production()
+                enercom_array.append(this_enercom)
+                
+        #compute the repartition as a fonction of the battery power
+        print("beginning of the repartition computation")
+        optimal_points = {}
+        optimal_gains = {}
+        total_consumption = {}
+        
+        for k in range(1, 25):
+                
+                gains = np.zeros((len(bat_array), len(area_array)))
+                autoconsommation = np.zeros((len(bat_array), len(area_array)))
+                autoproduction = np.zeros((len(bat_array), len(area_array))) 
+                annualized_costs_norm = np.zeros((len(bat_array), len(area_array)))
+                net_gain_matrix = np.zeros((len(bat_array), len(area_array)))
+                consumption = np.zeros((len(bat_array), len(area_array)))
+                params["n_households"] = k
+                multi = MultiHousehold(params, enercom_array[0])
+                for y in range(3):
+                        multi.total_electric_consumption[:,:,y] = consumption_household[:,0:k]
+                for i in range(len(bat_array)):
+                        for j in range(len(enercom_array)):
+                                print("i", i)
+                                print("j", j)
+                                this_enercom = enercom_array[j]
+                                kWc = this_enercom.PV_area[0] * this_enercom.PV_efficiency
+                                this_enercom.battery_capacity = bat_array[i]
+                                multi.enercom = this_enercom
+                                multi.production = this_enercom.total_production
+                                #print("sum production", np.sum(multi.production[:,0]))
+                                multi.repartition_elec()
+                                multi.compute_metrics()
+                                multi.pricing()
+                                # cv_coeff = 0
+                                # if kWc < 5:
+                                #         cv_coeff = 2.055
+                                # elif kWc < 36:
+                                #         cv_coeff = 1.953
+                                # elif kWc < 100:
+                                #         cv_coeff = 1.016
+                                # elif kWc < 250:
+                                #         cv_coeff = 0.642
+                                # else : 
+                                #         cv_coeff = 0.58
+                                # cv_revenue = np.mean(multi.production_year[:]) * cv_coeff * 65 * 10 /(25 * 1000000)
+                                tot_gain = np.mean(multi.total_revenue_with_pv[:]) + (np.sum(multi.total_price_without_pv[:,:]) - np.sum(multi.total_price_with_pv[:,:]))/24
+                                #tot_gain += cv_revenue
+                                #cost = this_enercom.annualized_investment_cost + 0.05433 * bat_array[i]
+                                cost = this_enercom.annualized_investment_cost + 0.03 * bat_array[i]  #300eur/kWh sur 10 ans
+                                annualized_costs_norm[i,j] = cost
+                                
+                                autoconsommation[i, j] = np.mean(multi.self_consumption[:])
+                                autoproduction[i, j] = np.mean(multi.self_sufficiency[:,:])
+                                gains[i,j] = tot_gain
+                                net_gain_matrix[i,j] = tot_gain - cost
+                                consumption[i,j] = np.sum(multi.consumption_year[:,:])/3 #sum over 3 years
+                                multi.clean_production()
+                
+                max_indices = np.unravel_index(np.argmax(net_gain_matrix), net_gain_matrix.shape)
+                optimal_points[k] = max_indices
+                optimal_gains[k] = net_gain_matrix[max_indices]
+                total_consumption[k] = consumption[max_indices]
+                print("number of households", k)
+                print("optimal points", optimal_points)
+                print("optimal gains", optimal_gains)
+                print("total consumption", total_consumption)
+                
+        kwc_plot = np.zeros(24)
+        bat_plot = np.zeros(24)
+        for k in range(1, 25):
+                i = optimal_points[k][0] # 
+                j = optimal_points[k][1]
+                this_bat = bat_array[i]
+                this_area = area_array[j]
+                kWc = this_area * pv_params["PV_efficiency"]
+                this_gain = optimal_gains[k]
+                this_consumption = total_consumption[k]
+                kwc_plot[k-1] = kWc
+                bat_plot[k-1] = this_bat
+                print("number of households", k)
+                print("optimal battery capacity", this_bat)
+                #print("optimal area", this_area)
+                print("optimal kWc", kWc)
+                print("optimal gain", this_gain)
+                print("total consumption", this_consumption)
+                
+                
+        
+        plt.plot(kwc_plot)
+        plt.show()
+        plt.plot(bat_plot)
+        plt.show()
+                
+
+price_bat_pv_other_var()
                 
                                
                 
