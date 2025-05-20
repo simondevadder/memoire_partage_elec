@@ -1902,7 +1902,8 @@ def price_bat_pv_other_var():
         
         pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
                 "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [548], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.991, 0.0075],
-                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 126792, "estimated_lifetime" : 25, "interest_rate" : 0.03
+                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 126792, "estimated_lifetime" : 25, "interest_rate" : 0.03,
+                "battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000
                 }
         #"EV_charger" : True, "EV_price" : 0.3, 'EV_file' : 'C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/ev_charging_profile/data_2023_selected.csv', 'number_ev_charger' : 3
         file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/data/individual+household+electric+power+consumption/household_power_consumption_24.npy"
@@ -1993,20 +1994,20 @@ def price_bat_pv_other_var():
                                 multi.repartition_elec()
                                 multi.compute_metrics()
                                 multi.pricing()
-                                # cv_coeff = 0
-                                # if kWc < 5:
-                                #         cv_coeff = 2.055
-                                # elif kWc < 36:
-                                #         cv_coeff = 1.953
-                                # elif kWc < 100:
-                                #         cv_coeff = 1.016
-                                # elif kWc < 250:
-                                #         cv_coeff = 0.642
-                                # else : 
-                                #         cv_coeff = 0.58
-                                # cv_revenue = np.mean(multi.production_year[:]) * cv_coeff * 65 * 10 /(25 * 1000000)
+                                cv_coeff = 0
+                                if kWc < 5:
+                                        cv_coeff = 2.055
+                                elif kWc < 36:
+                                        cv_coeff = 1.953
+                                elif kWc < 100:
+                                        cv_coeff = 1.016
+                                elif kWc < 250:
+                                        cv_coeff = 0.642
+                                else : 
+                                        cv_coeff = 0.58
+                                cv_revenue = np.mean(multi.production_year[:]) * cv_coeff * 65 * 10 /(25 * 1000000)
                                 tot_gain = np.mean(multi.total_revenue_with_pv[:]) + (np.sum(multi.total_price_without_pv[:,:]) - np.sum(multi.total_price_with_pv[:,:]))/24
-                                #tot_gain += cv_revenue
+                                tot_gain += cv_revenue
                                 #cost = this_enercom.annualized_investment_cost + 0.05433 * bat_array[i]
                                 cost = this_enercom.annualized_investment_cost + 0.03 * bat_array[i]  #300eur/kWh sur 10 ans
                                 annualized_costs_norm[i,j] = cost
