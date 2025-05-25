@@ -1704,7 +1704,8 @@ def change_number_household():
         
         enercom_array = []
         
-        area_array = np.linspace(20,600, 10)
+        area_array = np.linspace(500,1500, 10)  
+        #area_array = np.linspace(20,600, 10)
         #area_array = np.linspace(500,600, 10)
         kWc_array = area_array * pv_params["PV_efficiency"]
         bat_array = np.linspace(0,30000, 10)
@@ -1746,7 +1747,7 @@ def change_number_household():
         optimal_gains = {}
         total_consumption = {}
         
-        for k in range(1, 25):
+        for k in range(12, 25):
                 gains = np.zeros((len(bat_array), len(area_array)))
                 autoconsommation = np.zeros((len(bat_array), len(area_array)))
                 autoproduction = np.zeros((len(bat_array), len(area_array))) 
@@ -1805,7 +1806,7 @@ def change_number_household():
                 
         kwc_plot = np.zeros(24)
         bat_plot = np.zeros(24)
-        for k in range(1, 25):
+        for k in range(12, 25):
                 i = optimal_points[k][0] # 
                 j = optimal_points[k][1]
                 this_bat = bat_array[i]
@@ -2068,35 +2069,61 @@ def ev_optimum():
                 "battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000
                 }
         
+        # pv_bat_dict = {
+        #         1 : (3333,148.35),
+        #         2 : (3333,148.35),
+        #         3 : (6666,148.35),
+        #         4 : (10000,535.71),
+        #         5 : (13333,535.71),
+        #         6 : (16666,535.71),
+        #         7 : (16666,535.71),
+        #         8 : (16666,535.71),
+        #         9 : (16666,535.71),
+        #         10 : (10000,535.71),
+        #         11 : (10000,535.71),
+        #         12 : (10000,535.71),
+        #         13 : (10000,535.71),
+        #         14 : (10000,535.71),
+        #         15 : (10000,535.71),
+        #         16 : (13333,535.71),
+        #         17 : (10000,535.71),
+        #         18 : (10000,535.71),
+        #         19 : (10000,535.71),
+        #         20 : (13333,535.71),
+        #         21 : (13333,535.71),
+        #         22 : (13333,535.71),
+        #         23 : (13333,535.71),
+        #         24 : (13333,535.71)            
+        # }
         pv_bat_dict = {
-                1 : (3333,148.35),
-                2 : (3333,148.35),
-                3 : (6666,148.35),
-                4 : (10000,535.71),
-                5 : (10000,535.71),
-                6 : (13333,535.71),
-                7 : (13333,535.71),
-                8 : (13333,535.71),
-                9 : (13333,535.71),
-                10 : (13333,535.71),
-                11 : (13333,535.71),
-                12 : (16666,535.71),
-                13 : (16666,535.71),
-                14 : (16666,535.71),
-                15 : (16666,535.71),
-                16 : (13333,535.71),
-                17 : (13333,535.71),
-                18 : (13333,535.71),
-                19 : (13333,535.71),
-                20 : (13333,535.71),
-                21 : (13333,535.71),
-                22 : (13333,535.71),
-                23 : (13333,535.71),
-                24 : (13333,535.71)            
+                1 : (0,19.8),
+                2 : (3333,84.6),
+                3 : (3333,84.6),
+                4 : (3333,84.6),
+                5 : (10000,148.9),
+                6 : (13333,213.2),
+                7 : (13333,277.5),
+                8 : (13333,277.5),
+                9 : (13333,277.5),
+                10 : (10000,342.3),
+                11 : (10000,535.71),
+                12 : (10000,535.71),
+                13 : (10000,535.71),
+                14 : (10000,600),
+                15 : (10000,535.71),
+                16 : (10000,600),
+                17 : (13333,600),
+                18 : (13333,600),
+                19 : (13333,600),
+                20 : (13333,600),
+                21 : (13333,600),
+                22 : (10000,600),
+                23 : (13333,600),
+                24 : (10000,600)            
         }
                 
         input_directory = "pv_example_2"
-        output_directory = "exemple_2_21_mai"
+        output_directory = "exemple_2_23mai_withoutcv/exemple_2_23_mai"
         n_households = 24
         cooking_params = ["low", "medium", "medium", "high", "high", "high", "low", "low", "high", "medium", "medium", "medium", "high", "low", "low", "medium", "low", "medium", "high", "high", "high", "low", "medium", "medium" ]
         wh_capacity_params = ["low", "medium", "medium", "high", "high", "medium", "low", "low", "medium", "low", "medium", "medium", "high", "low", "medium", "low", "medium", "medium", "medium", "medium", "high", "low", "low", "medium"]
