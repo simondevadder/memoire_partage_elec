@@ -1615,7 +1615,104 @@ def ev_bat():
         
 
 #ev_bat()
-         
+
+def load_profile_n_household():
+        pv_params = {"directory_data": "brussels", "weather_file_name":"brussels_50.8444_4.35609_msg-iodc_60_", "directory_output" :  "pv_example_2", "n_years" : 3, "begin_year" : 2017, "end_year" : 2019,
+                "n_households" : 8, "key" : "hybrid", "PV_inclination": [20], "PV_orientation" : [200], "PV_area" : [1], "PV_efficiency" : 0.182, "PV_module_size": [1.99, 0.991, 0.0075],
+                "PV_NOCT" : 43.6, "PV_betacoeff": 0.0034, "PV_Tref" : 25, "sharing_price" : 0.2, "grid_injection_price" : 0.04, "investment_cost" : 126792, "estimated_lifetime" : 25, "interest_rate" : 0.03,
+                "battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000
+                
+                }
+        
+        #"battery": True, "battery_capacity": 10000, "battery_efficiency": 0.9, "battery_charging_power": 5000, "battery_discharging_power": 5000,
+        #"EV_charger" : True, "EV_price" : 0.45
+        #"EV_charger" : True, "EV_price" : 0.3, 'EV_file' : 'C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/ev_charging_profile/data_2023_selected.csv'
+
+        enercom = EnergyCommunity(pv_params)
+        enercom.get_weather_data()
+        a,b = enercom.func_compute_total_production()
+        file_save = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"
+        np.savetxt(file_save, a)
+        print("Production profile saved to", file_save)
+        for i in range(1,49):
+                n_households = i
+
+                input_directory = "pv_example_2"
+                output_directory = "example_2"
+                cooking_params = ["low", "medium", "medium", "high", "high", "high", "low", "low", "high", "medium", "medium", "medium", "high", "low", "low", "medium", "low", "medium", "high", "high", "high", "low", "medium", "medium" ]*2
+                wh_capacity_params = ["low", "medium", "medium", "high", "high", "medium", "low", "low", "medium", "low", "medium", "medium", "high", "low", "medium", "low", "medium", "medium", "medium", "medium", "high", "low", "low", "medium"]*2
+                n_cold_source_params = [1, 1, 1, 2, 2, 2, 1, 1, 2, 1, 1, 2, 2, 1, 1, 1, 2,2,2,2,2,1,1,2]*2
+                wm_frequency_params = ["medium", "medium", "medium", "medium", "high", "medium", "low", "low", "medium", "low", "medium", "medium", "high", "low", "low", "low", "medium", "high", "medium", "high", "high", "low", "low", "medium"]*2
+                have_dryer_params = [False, False, True, False, True, False, False, False, False, False, False, False, True, False, False, False, False, False, False, True, True, False, False, False]*2
+                dryer_type_params = [None, None, "condensation", None, "evacuation", None, None, None, None, None, None, None, "heat_pump", None, None, None, None, None, None, "evacuation", "condensation", None, None, None]*2
+                dryer_frequency_params = [None, None, "medium", None, "medium", None, None, None, None, None, None, None, "low", None, None, None, None, None, None, "medium", "low", None, None, None]*2
+                have_dw_params = [False, True, True, True, True, True, False, False, True, False, True, True, True, False, False, False, False, True, True, True, True, False, False, False]*2
+                dw_frequency_params = [None, "low", "medium", "medium", "high", "high", None, None, "medium", None, "low", "high", "medium", None, None, None, None, "medium", "low", "medium", "low", None, None, None]*2
+                grid_price_day_params=[0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36,0.36,0.39,0.39,0.39,0.36,0.36,0.36,0.36]*2
+                grid_price_night_params=[0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29,0.30,0.30,0.30,0.33,0.33,0.29,0.29,0.29]*2
+                heating_is_elec_params = [True]*n_households
+                T_ext_th_params = [12,9,14,11,13,13,11,13,12,10,11,9,13,15,12,12,12,11,13,14,9,9,14,12]*2
+                T_ext_th_night_params = [7,5,9,9,5,7,6,8,7,8,7,6,5,9,10,7,7,6,8,8,4,5,10,7]*2
+                annual_heating_value_params = [95] * n_households
+                #PEB_params = ["A","A", "A", "B", "A", "B", "A", "B", "B","B", "A", "B", "A", "A", "B", "B", "A","B", "A", "A", "A","B", "A","B"]
+                heating_eff_params = [3]*n_households
+                
+                flat_area_params = [60,100,120,150,250,120,60,80,100,80,120,150,250,66,100,75,110,120,120,150,250,66,80,90]*2
+                #wh_night = [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]*2
+                wh_night = [False]*n_households
+                wh_intelligence_params = True
+                #wh_hour_mode = "perfect_knowledge"
+                wh_hour_mode = "fixed"
+                if wh_hour_mode == "perfect_knowledge":
+                        wh_multiyears_params = [True]*n_households
+                else:
+                        wh_multiyears_params = [False]*n_households
+                
+                params = {
+                        "input_directory": input_directory,
+                        "output_directory": output_directory,
+                        "n_households": n_households,
+                        "cooking_params": cooking_params,
+                        "wh_usage_params": wh_capacity_params,
+                        "n_cold_source_params": n_cold_source_params,
+                        "wm_frequency_params": wm_frequency_params,
+                        "have_dryer_params": have_dryer_params,
+                        "dryer_type_params": dryer_type_params,
+                        "dryer_frequency_params": dryer_frequency_params,
+                        "have_dw_params": have_dw_params,
+                        "dw_frequency_params": dw_frequency_params,
+                        "grid_price_day_params": grid_price_day_params,
+                        "grid_price_night_params": grid_price_night_params,
+                        "wh_intelligence_params": wh_intelligence_params,
+                        "heating_is_elec_params": heating_is_elec_params,
+                        "T_ext_th_params": T_ext_th_params,
+                        "T_ext_th_night_params": T_ext_th_night_params,
+                        "annual_heating_value_params": annual_heating_value_params,
+                        #"PEB_params": PEB_params,
+                        "heating_eff_params": heating_eff_params,
+                        "flat_area_params": flat_area_params,
+                        "wh_night_params": wh_night,
+                        "wh_hour_mode": wh_hour_mode,
+                        "wh_multiyears_params": wh_multiyears_params,
+                        "wh_intelligence_params" : wh_intelligence_params,
+                }
+                #enercom.get_weather_data()
+                #enercom.func_compute_total_production()
+                #enercom.save_production()
+                multi = MultiHousehold(params, enercom)
+                multi.run()
+                total_consumption = multi.total_electric_consumption
+                
+                for y in range(enercom.n_years):
+                        file = f"C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/{n_households}_households_{y}_years.csv"
+                        to_save = total_consumption[:,:,y]
+                        np.savetxt(file, to_save, delimiter=",", fmt='%.2f')
+                print(f"Load profile for {n_households} households saved to {file}")
+
+load_profile_n_household()
+                
+        
+        
 def change_number_household():
         """Modification of the number of households in the community
         """
@@ -1830,7 +1927,7 @@ def change_number_household():
         plt.plot(bat_plot)
         plt.show()
         
-change_number_household()
+#change_number_household()
 
 
 def example_with_other_data():
