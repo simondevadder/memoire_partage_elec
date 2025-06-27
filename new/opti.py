@@ -37,7 +37,7 @@ def first():
     #VARIABLES
     #########################
 
-    m.pv_area = Var(within=NonNegativeReals, initialize=500)
+    m.pv_area = Var(within=NonNegativeReals, initialize=700)
     m.wh_battery = Var(within=NonNegativeReals, initialize=10000)
     m.p_bat_max = Var(within=NonNegativeReals, initialize=2000)
     m.p = Var(m.households, m.time, within=NonNegativeReals, initialize=0)  # Power to each household in W
@@ -72,6 +72,20 @@ def first():
             if t_day < 28 or t_day >= 88:
                 return True  # night time during the week
         return False
+    
+    def compute_cv_coeff(kWc):
+        
+        if kWc < 5:
+                cv_coeff = 2.055
+        elif kWc < 36:
+                cv_coeff = 1.953
+        elif kWc < 100:
+                cv_coeff = 1.016
+        elif kWc < 250:
+                cv_coeff = 0.642
+        else : 
+                cv_coeff = 0.58
+        return cv_coeff
 
     def objective_rule(m):
         total_bill_reduction = 0
@@ -84,32 +98,26 @@ def first():
         #####################
         #Revenue
         #####################
-        for t in m.time:
-            for h in m.households:
-                if time_is_night(t):
-                    total_bill_reduction += m.p[h, t] * price_night * dt*0.001
-                else:
-                    total_bill_reduction += m.p[h, t] * price_day * dt*0.001
-                    
-            total_from_injection += m.p_inj[t] * price_injection * dt*0.001  # assuming injection is always at day price
-            total_from_ev += m.p_ev[t] * price_ev * dt*0.001
+        total_bill_reduction = sum(
+        m.p[h, t] * (price_night if time_is_night(t) else price_day) * dt * 0.001
+        for t in m.time for h in m.households
+        )
+        total_from_injection = sum(m.p_inj[t] * price_injection * dt * 0.001 for t in m.time)
+        total_from_ev = sum(m.p_ev[t] * price_ev * dt * 0.001 for t in m.time)
+            
+        #print("total_bill_reduction:", total_bill_reduction)
+        #print("total_from_injection:", total_from_injection)
+        #print("total_from_ev:", total_from_ev)
             
         #################
         # CV
         ##################
         cv_coeff = 0
-        kWc = value(m.pv_area) * 0.182
-        if kWc < 5:
-                cv_coeff = 2.055
-        elif kWc < 36:
-                cv_coeff = 1.953
-        elif kWc < 100:
-                cv_coeff = 1.016
-        elif kWc < 250:
-                cv_coeff = 0.642
-        else : 
-                cv_coeff = 0.58
-        cv_revenue = np.sum(m.p_pv[t] for t in m.time) * cv_coeff * 65 * 10 /(25 * 1000000)
+        kWc = m.pv_area * 0.182  # kWc is the peak power of the PV system in kW
+        cv_coeff = compute_cv_coeff(kWc)
+        
+        cv_revenue = sum(m.p_pv[t] for t in m.time) * cv_coeff * 65 * dt * 10 /(25 * 1000000)
+        #print("cv_revenue:", cv_revenue)
         
         ###############
         # PV Costs
@@ -131,14 +139,18 @@ def first():
                 x = -0.66
                 y = 1066.6
                 price_per_kwc = x * kWc + y
-        pv_costs = kWc * price_per_kwc        
+        pv_costs = kWc * price_per_kwc  
+        #print("prix par kwc:", price_per_kwc)  
+        #print("kWc:", kWc)
+            
         #Annualized costs 
         pv_costs_annualized = pv_costs * (m.annual_rate / (1 - (1 + m.annual_rate) ** -m.lifetime))  # 25 years lifetime
+        #print("pv_costs_annualized:", pv_costs_annualized)
         
         ###############
         #Battery Costs
         ###############
-        battery_costs = m.wh_battery * 0.03  # assuming 200 €/kWh for the battery
+        battery_costs = m.wh_battery * 0.03  # assuming 300 €/kWh for the battery
         
         ###############
         #ev_costs
@@ -146,6 +158,7 @@ def first():
         ev_costs = m.p_ev_max * 0.01  # to change
         
         total_revenue = total_bill_reduction + total_from_injection + total_from_ev + cv_revenue - pv_costs_annualized - battery_costs - ev_costs
+        #print("total_revenue:", total_revenue)
         return total_revenue
 
        
