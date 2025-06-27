@@ -6,35 +6,46 @@ import json
 import sys
 import numpy as np
 from pyomo.opt import SolverFactory
+import pandas as pd
 
 
 def first():
     gurobi = SolverFactory('gurobi')
     m = ConcreteModel()
     
-    load_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/1_households_1_years.csv"
+    load_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/24_households_1_years.csv"
     production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"
-    load_profile = np.loadtxt(load_profile_file, delimiter=',')
-    production_profile = np.loadtxt(production_profile_file, delimiter=',')
+    load_profile = pd.read_csv(load_profile_file, header=None )
+    load_profile = load_profile.to_numpy()  # Convert to numpy array for easier manipulation
+    df = pd.read_csv(production_profile_file, header=None, dtype=str)
+
+    # Séparer chaque string en 3 colonnes
+    production_profile = df[0].str.split(expand=True).astype(float).to_numpy()
+    production_profile = np.repeat(production_profile, 4, axis=0)
+
+    # production_profile aura la forme (8760, 3) avec des floats
+
+  # Affiche les 3 valeurs de la première ligne sous forme de floats
     n_households = load_profile.shape[0]  # à vérifier si pas 1
     dt = 0.25
     n_timestep = load_profile.shape[1]
     m.time = RangeSet(0,n_timestep-1)  # 35040 timesteps for one year with 15 minutes intervals
     m.households = RangeSet(0, n_households - 1)  # 1 household
 
+
     #########################
     #VARIABLES
     #########################
-    
-    m.pv_area = Var(within=NonNegativeReals)
-    m.wh_battery = Var(within=NonNegativeReals)
-    m.p_bat_max = Var(within=NonNegativeReals)
-    m.p = Var(m.households, m.time, within=NonNegativeReals)
-    m.p_bat = Var( m.time)
-    m.p_inj = Var(m.time, within=NonNegativeReals)
-    m.p_ev = Var(m.time, within=NonNegativeReals)  # Power to EV, not used in this model
-    m.soc = Var(m.time, within=NonNegativeReals)
-    m.p_pv = Var(m.time, within=NonNegativeReals)
+
+    m.pv_area = Var(within=NonNegativeReals, initialize=500)
+    m.wh_battery = Var(within=NonNegativeReals, initialize=10000)
+    m.p_bat_max = Var(within=NonNegativeReals, initialize=2000)
+    m.p = Var(m.households, m.time, within=NonNegativeReals, initialize=0)  # Power to each household in W
+    m.p_bat = Var(m.time, within=NonNegativeReals, initialize=0)
+    m.p_inj = Var(m.time, within=NonNegativeReals, initialize=0)
+    m.p_ev = Var(m.time, within=NonNegativeReals, initialize=0)  # Power to EV, not used in this model
+    m.soc = Var(m.time, within=NonNegativeReals, initialize=0)  # State of charge of the battery in Wh, not used in this model
+    m.p_pv = Var(m.time, within=NonNegativeReals, initialize=0)  # Power from PV in W, not used in this model
     
     
     #########################
@@ -44,6 +55,7 @@ def first():
     m.p_ev_max = Param(initialize=74000)  # Maximum power to EV in W, not used in this model
     m.annual_rate = Param(initialize=0.03)  # Annual rate for the PV costs
     m.lifetime = Param(initialize=25)  # Lifetime of the PV system in years
+    year = 0
     
     
     #########################
@@ -86,7 +98,7 @@ def first():
         # CV
         ##################
         cv_coeff = 0
-        kWc = m.pv_area * 0.182
+        kWc = value(m.pv_area) * 0.182
         if kWc < 5:
                 cv_coeff = 2.055
         elif kWc < 36:
@@ -97,11 +109,11 @@ def first():
                 cv_coeff = 0.642
         else : 
                 cv_coeff = 0.58
-        cv_revenue = np.sum(m.p_pv[:]) * cv_coeff * 65 * 10 /(25 * 1000000)
+        cv_revenue = np.sum(m.p_pv[t] for t in m.time) * cv_coeff * 65 * 10 /(25 * 1000000)
         
         ###############
         # PV Costs
-        ############kWc
+        ###############
         price_per_kwc = 0
         if kWc <=10:
                 x = -240
@@ -143,12 +155,12 @@ def first():
     #CONSTRAINTS
     #########################
     
-    def power_to_household(m, t, h):
+    def power_to_household(m, h, t):
         return m.p[h, t] <= load_profile[h, t]
     m.power_to_household = Constraint(m.households, m.time, rule=power_to_household)
     
     def power_from_pv(m, t):
-        return m.p_pv[t] == production_profile[t] * m.pv_area
+        return m.p_pv[t] == production_profile[t, year] * m.pv_area
     m.power_from_pv = Constraint(m.time, rule=power_from_pv)
     
     def power_to_battery_pos(m, t):
@@ -169,17 +181,17 @@ def first():
     
     def soc_set(m,t):
         if t == 0:
-            return m.soc[t] == 0.5 
+            return m.soc[t] == 0.5 *m.wh_battery  # Initial state of charge at 50% of the battery capacity
         else:
-            return m.soc[t] == m.soc[t-1] - dt * (m.p_bat[t-1] / m.wh_battery)
+            return m.soc[t] == m.soc[t-1] - dt * m.p_bat[t-1] 
     m.soc_set = Constraint(m.time, rule=soc_set)
     
     def soc_lower_limit(m, t):
-        return m.soc[t] >= 0.2
+        return m.soc[t] >= 0.2 * m.wh_battery  # Minimum state of charge at 20% of the battery capacity
     m.soc_lower_limit = Constraint(m.time, rule=soc_lower_limit)
     
     def soc_upper_limit(m, t):
-        return m.soc[t] <= 0.9
+        return m.soc[t] <= 0.9 * m.wh_battery  # Maximum state of charge at 90% of the battery capacity
     m.soc_upper_limit = Constraint(m.time, rule=soc_upper_limit)
     
     def pv_area_limit(m):
@@ -194,3 +206,12 @@ def first():
         return m.p_ev[t] <= m.p_ev_max
     m.p_ev_limit = Constraint(m.time, rule=p_ev_limit)
     
+    
+    gurobi.solve(m)
+     # Affichage des résultats principaux
+    print("Objectif (revenu total) :", value(m.objective))
+    print("Surface PV (pv_area) :", value(m.pv_area))
+    print("Capacité batterie (wh_battery) :", value(m.wh_battery))
+    print("Puissance batterie max (p_bat_max) :", value(m.p_bat_max))
+    
+first()
