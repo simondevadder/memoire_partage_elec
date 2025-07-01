@@ -37,7 +37,7 @@ def first():
     #print("Number of households:", n_households)
     #print("Number of timesteps:", n_timestep)
     #print("load_profile shape:", load_profile)
-
+    print("load_profile tot sum:", np.sum(load_profile[:,:])*dt)
 
     #########################
     #VARIABLES
