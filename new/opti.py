@@ -68,7 +68,7 @@ def first(load_profile_file=None, production_profile_file=None):
     m.annual_rate = Param(initialize=0.03)  # Annual rate for the PV costs
     m.lifetime = Param(initialize=25)  # Lifetime of the PV system in years
     year = 0
-    breakpoints = [7.27, 36, 100, 250, 365] # for cv_coeff
+    breakpoints = [7.27, 36, 100, 250, 10000] # for cv_coeff
     
     breakpoints_price = [0, 10, 50, 100, 100000]  # adapte la borne supérieure si besoin
 
@@ -356,7 +356,7 @@ import pandas as pd
 results = []
 production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"  # adapte le chemin si besoin
 
-for n in range(1,49):  # adapte la liste à tes cas
+for n in range(36,49):  # adapte la liste à tes cas
     load_profile_file = f"C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/{n}_households_0_years.csv"
     try:
         res = first(load_profile_file, production_profile_file)
@@ -374,4 +374,4 @@ df = pd.DataFrame(results, columns=columns)
 
 # Pour voir le résultat
 print(df)
-df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_simulations.csv", index=False)
+df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_simulations_bis.csv", index=False)
