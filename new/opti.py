@@ -9,12 +9,12 @@ from pyomo.opt import SolverFactory
 import pandas as pd
 
 
-def first():
+def first(load_profile_file=None, production_profile_file=None):
     gurobi = SolverFactory('gurobi')
     m = ConcreteModel()
     
-    load_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/24_households_1_years.csv"
-    production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"
+    # load_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/24_households_1_years.csv"
+    # production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"
     load_profile = pd.read_csv(load_profile_file, header=None )
     load_profile = load_profile.to_numpy()  # Convert to numpy array for easier manipulation
     df = pd.read_csv(production_profile_file, header=None, dtype=str)
@@ -37,13 +37,14 @@ def first():
     #print("Number of households:", n_households)
     #print("Number of timesteps:", n_timestep)
     #print("load_profile shape:", load_profile)
-    print("load_profile tot sum:", np.sum(load_profile[:,:])*dt)
+    #print("load_profile tot sum:", np.sum(load_profile[:,:])*dt)
+    tot_conso = np.sum(load_profile[:,:])*dt
 
     #########################
     #VARIABLES
     #########################
 
-    m.pv_area = Var(within=NonNegativeReals, bounds=(40, 1000), initialize=700)
+    m.pv_area = Var(within=NonNegativeReals, bounds=(40, 10000), initialize=700)
     m.wh_battery = Var(within=NonNegativeReals, bounds=(0,50000), initialize=10000)
     #m.p_bat_max = Var(within=NonNegativeReals, initialize=2000)
     m.p = Var(m.households, m.time, within=NonNegativeReals, initialize=0)  # Power to each household in W
@@ -53,7 +54,7 @@ def first():
     m.p_ev = Var(m.time, within=NonNegativeReals, initialize=0)  # Power to EV, not used in this model
     m.soc = Var(m.time, within=NonNegativeReals, initialize=5000)  # State of charge of the battery in Wh, not used in this model
     #m.p_pv = Var(m.time, within=NonNegativeReals, initialize=0)  # Power from PV in W, not used in this model
-    m.kWc = Var(within=NonNegativeReals, bounds=(7.27, 365), initialize=127.4)
+    m.kWc = Var(within=NonNegativeReals, bounds=(7.27, 1820), initialize=127.4)
     m.cv_coeff = Var(within=NonNegativeReals, bounds=(0.58, 1.953), initialize=1)  # Coefficient for the piecewise function, bounds can be adjusted
     m.price_per_kwc = Var(within=NonNegativeReals, bounds=(0, 4000), initialize=1500)  # Price per kWc, bounds can be adjusted
     m.p_ev_max = Var(within=NonNegativeReals, initialize=74000)  # Maximum power of the battery in W, to change as a ffunction to the capacity
@@ -220,8 +221,10 @@ def first():
             return -3.75 * x + 1337.5
         elif x < 100:
             return -3 * x + 1300
-        else:
+        elif x <120:
             return -0.66 * x + 1066.6
+        else:
+            return 987.4
 
     m.piecewise_price = Piecewise(
         m.price_per_kwc, m.kWc,
@@ -308,27 +311,28 @@ def first():
     p_inj = sum(production_profile[t, year] * value(m.pv_area) - (
                 sum(value(m.p[h, t]) for h in m.households) + value(m.p_bat_pos[t]) + value(m.p_ev[t]) - value(m.p_bat_neg[t])
             ) for t in m.time)
-    print("Puissance totale distribuée aux ménages :", puissance_totale, "Wh")
-    print("puissance injectée :", p_inj * 0.025, "Wh")
-    print("puissance produite par les PV (p_pv) :", sum(production_profile[t, year] * value(m.pv_area)*0.25 for t in m.time))
+    puissance_produite = sum(production_profile[t, year] * value(m.pv_area)*0.25 for t in m.time)
+    # print("Puissance totale distribuée aux ménages :", puissance_totale, "Wh")
+    # print("puissance injectée :", p_inj * 0.025, "Wh")
+    # print("puissance produite par les PV (p_pv) :", sum(production_profile[t, year] * value(m.pv_area)*0.25 for t in m.time))
 
 
-     # Affichage des résultats principaux
-    print("Objectif (revenu total) :", value(m.objective))
-    print("Surface PV (pv_area) :", value(m.pv_area))
+    #  # Affichage des résultats principaux
+    # print("Objectif (revenu total) :", value(m.objective))
+    # print("Surface PV (pv_area) :", value(m.pv_area))
 
-    print("production_profile[65, year] :", production_profile[65, year])
+    # print("production_profile[65, year] :", production_profile[65, year])
     
-    print("Capacité batterie (wh_battery) :", value(m.wh_battery))
-    print("Puissance batterie max (p_bat_max) :", value(m.p_bat_max))
-    print("cv_coeff :", value(m.cv_coeff))
-    print("price par kwc", value(m.price_per_kwc))  # Affichage du prix par kWc
+    # print("Capacité batterie (wh_battery) :", value(m.wh_battery))
+    # print("Puissance batterie max (p_bat_max) :", value(m.p_bat_max))
+    # print("cv_coeff :", value(m.cv_coeff))
+    # print("price par kwc", value(m.price_per_kwc))  # Affichage du prix par kWc
     pv_costs = value(m.kWc) * value(m.price_per_kwc)  # Calcul du coût total du PV
     pv_costs_annualized = pv_costs * (m.annual_rate / (1 - (1 + m.annual_rate) ** -m.lifetime))  # 25 years lifetime
-    print("pv costs", pv_costs_annualized)
+    # print("pv costs", pv_costs_annualized)
 
     cv_revenue = sum(production_profile[t, year] * value(m.pv_area) for t in m.time) * value(m.cv_coeff) * 65 * dt * 10 /(25 * 1000000)
-    print("cv_revenue:", cv_revenue)
+    # print("cv_revenue:", cv_revenue)
     price_day = 0.38
     price_night = 0.29
     price_injection = 0.04  # price for injection, not used in this model
@@ -336,12 +340,38 @@ def first():
         value(m.p_expr[h, t]) * (price_night if time_is_night(t) else price_day) * dt * 0.001
         for t in m.time for h in m.households
         )
-    print("total_bill_reduction:", total_bill_reduction)
+    # print("total_bill_reduction:", total_bill_reduction)
 
     total_from_injection = p_inj * price_injection * dt * 0.001   
-    print("total_from_injection:", total_from_injection)
-    print("ev_max:", value(m.p_ev_max))
-    
+    # print("total_from_injection:", total_from_injection)
+    # print("ev_max:", value(m.p_ev_max))
+    print("n households:", n_households)
+    return n_households, value(m.objective), value(m.kWc), value(m.wh_battery), puissance_totale, puissance_produite, tot_conso
     
 
-first()
+
+
+import pandas as pd
+
+results = []
+production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"  # adapte le chemin si besoin
+
+for n in range(1,49):  # adapte la liste à tes cas
+    load_profile_file = f"C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/{n}_households_0_years.csv"
+    try:
+        res = first(load_profile_file, production_profile_file)
+        results.append(res)
+    except Exception as e:
+        print(f"Erreur pour {n} ménages : {e}")
+        continue
+
+# Adapter les noms de colonnes à ce que retourne first
+columns = [
+    "n_households", "objective", "kWc", "wh_battery",
+    "puissance_totale", "puissance_produite", "tot_conso"
+]
+df = pd.DataFrame(results, columns=columns)
+
+# Pour voir le résultat
+print(df)
+df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_simulations.csv", index=False)
