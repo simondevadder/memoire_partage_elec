@@ -275,13 +275,6 @@ def first(load_profile_file=None, production_profile_file=None):
         return m.soc[t] <= 0.9 * m.wh_battery  # Maximum state of charge at 90% of the battery capacity
     m.soc_upper_limit = Constraint(m.time, rule=soc_upper_limit)
     
-    def pv_area_limit(m):
-        return m.pv_area <= 1000
-    #m.pv_area_limit = Constraint(rule=pv_area_limit)
-    
-    def wh_battery_limit(m):
-        return m.wh_battery <= 100000
-    #m.wh_battery_limit = Constraint(rule=wh_battery_limit)
     
     def p_ev_limit(m, t):
         return m.p_ev[t] <= m.p_ev_max
