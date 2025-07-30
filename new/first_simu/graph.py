@@ -7,7 +7,7 @@ import seaborn as sns
 
 
 def func_1():
-    file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/first_simu/resultats_simulations_merged.csv"
+    file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_simulations_p_bat_var.csv"
 
     df = pd.read_csv(file)
     # print(df)

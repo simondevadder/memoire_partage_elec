@@ -7,9 +7,10 @@ import sys
 import numpy as np
 from pyomo.opt import SolverFactory
 import pandas as pd
+import pandas as pd
 
 
-def first(load_profile_file=None, production_profile_file=None):
+def first(load_profile_file=None, production_profile_file=None, capex_battery=0.03, injection_price=0.04):
     gurobi = SolverFactory('gurobi')
     m = ConcreteModel()
     
@@ -45,8 +46,8 @@ def first(load_profile_file=None, production_profile_file=None):
     #########################
 
     m.pv_area = Var(within=NonNegativeReals, bounds=(40, 10000), initialize=700)
-    m.wh_battery = Var(within=NonNegativeReals, bounds=(0,50000), initialize=10000)
-    #m.p_bat_max = Var(within=NonNegativeReals, initialize=2000)
+    m.wh_battery = Var(within=NonNegativeReals, bounds=(0,5000000), initialize=10000)
+    m.p_bat_max = Var(within=NonNegativeReals, initialize=5000)
     m.p = Var(m.households, m.time, within=NonNegativeReals, initialize=0)  # Power to each household in W
     m.p_bat_pos = Var(m.time, within=NonNegativeReals, initialize=0)
     m.p_bat_neg = Var(m.time, within=NonNegativeReals, initialize=0)  # Power to the battery in W
@@ -64,9 +65,10 @@ def first(load_profile_file=None, production_profile_file=None):
     #########################
     
     m.eff_bat = Param(initialize=0.9)  # Efficiency of the battery
-    m.p_bat_max = Param( initialize=1000)  # Maximum power of the battery in W, to change as a ffunction to the capacity
+    #m.p_bat_max = Param( initialize=10000)  # Maximum power of the battery in W, to change as a ffunction to the capacity
     m.annual_rate = Param(initialize=0.03)  # Annual rate for the PV costs
     m.lifetime = Param(initialize=25)  # Lifetime of the PV system in years
+    m.lifetime_battery = Param(initialize=10)  # Lifetime of the battery in years
     year = 0
     breakpoints = [7.27, 36, 100, 250, 10000] # for cv_coeff
     
@@ -119,7 +121,7 @@ def first(load_profile_file=None, production_profile_file=None):
         total_from_ev = 0
         price_day = 0.38
         price_night = 0.29
-        price_injection = 0.04  # price for injection, not used in this model
+        price_injection = injection_price  # price for injection, not used in this model
         price_ev = -1
         #####################
         #Revenue
@@ -158,7 +160,8 @@ def first(load_profile_file=None, production_profile_file=None):
         ###############
         #Battery Costs
         ###############
-        battery_costs = m.wh_battery * 0.03  # assuming 300 €/kWh for the battery
+        battery_costs = m.wh_battery * capex_battery  # assuming 300 €/kWh for the battery
+        battery_costs = battery_costs * (m.annual_rate / (1 - (1 + m.annual_rate) ** -m.lifetime_battery))  # 10 years lifetime for the battery
         
         ###############
         #ev_costs
@@ -175,6 +178,10 @@ def first(load_profile_file=None, production_profile_file=None):
     #########################
     #CONSTRAINTS
     #########################
+    
+    def p_bat_max_rule(m):
+        return m.p_bat_max <= m.wh_battery * 0.5
+    m.p_bat_max_rule = Constraint(rule=p_bat_max_rule)
     
     def p_rule_1(m, h, t):
         return m.p[h, t] <= m.p_expr[h, t]
@@ -339,32 +346,58 @@ def first(load_profile_file=None, production_profile_file=None):
     # print("total_from_injection:", total_from_injection)
     # print("ev_max:", value(m.p_ev_max))
     print("n households:", n_households)
-    return n_households, value(m.objective), value(m.kWc), value(m.wh_battery), puissance_totale, puissance_produite, tot_conso
+    return n_households, value(m.objective), value(m.kWc), value(m.wh_battery), puissance_totale, puissance_produite, tot_conso, value(m.p_bat_max)
     
 
 
+def main_simu():
 
-import pandas as pd
+    results = []
+    production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"  # adapte le chemin si besoin
 
-results = []
-production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"  # adapte le chemin si besoin
+    for n in range(1,49):  # adapte la liste à tes cas
+        load_profile_file = f"C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/{n}_households_0_years.csv"
+        try:
+            res = first(load_profile_file, production_profile_file)
+            results.append(res)
+        except Exception as e:
+            print(f"Erreur pour {n} ménages : {e}")
+            continue
 
-for n in range(36,49):  # adapte la liste à tes cas
-    load_profile_file = f"C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/{n}_households_0_years.csv"
-    try:
-        res = first(load_profile_file, production_profile_file)
-        results.append(res)
-    except Exception as e:
-        print(f"Erreur pour {n} ménages : {e}")
-        continue
+    # Adapter les noms de colonnes à ce que retourne first
+    columns = [
+        "n_households", "objective", "kWc", "wh_battery",
+        "puissance_totale", "puissance_produite", "tot_conso", "p_bat_max"
+    ]
+    df = pd.DataFrame(results, columns=columns)
 
-# Adapter les noms de colonnes à ce que retourne first
-columns = [
-    "n_households", "objective", "kWc", "wh_battery",
-    "puissance_totale", "puissance_produite", "tot_conso"
-]
-df = pd.DataFrame(results, columns=columns)
+    # Pour voir le résultat
+    print(df)
+    df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_simulations_p_bat_var.csv", index=False)
+    
+main_simu()
+def capex_batt():
+    capexes = np.linspace(0.005, 0.06, 5)
+    injection_prices = np.linspace(0.001, 0.1, 5)
+    
+    production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"  # adapte le chemin si besoin
+    load_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/30_households_0_years.csv"
+    results = []
+    for capex in capexes:
+        for injection_price in injection_prices:
+            try:
+                res = first(load_profile_file, production_profile_file, capex_battery=capex, injection_price=injection_price)
+                results.append((capex, injection_price) + res)
+            except Exception as e:
+                print(f"Erreur pour capex {capex} et injection price {injection_price} : {e}")
+                continue
+    columns = [
+        "capex_battery", "injection_price", "n_households", "objective", "kWc", "wh_battery",
+        "puissance_totale", "puissance_produite", "tot_conso", "p_bat_max"
+    ]
+    df = pd.DataFrame(results, columns=columns)
+    print(df)
+    df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_capex_battery.csv", index=False)
+    
 
-# Pour voir le résultat
-print(df)
-df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_simulations_bis.csv", index=False)
+#capex_batt()
