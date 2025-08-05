@@ -7,7 +7,7 @@ import seaborn as sns
 
 
 def func_1():
-    file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_simulations_p_bat_var.csv"
+    file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/pv_area_300/resultats_simulations_pv_300.csv"
 
     df = pd.read_csv(file)
     # print(df)
@@ -19,6 +19,9 @@ def func_1():
     puissance_totale = df["puissance_totale"].to_numpy()
     puissance_produite = df["puissance_produite"].to_numpy()
     tot_conso = df["tot_conso"].to_numpy()
+    tot_cost_without = df["total_cost_without "].to_numpy()
+    tot_cost_with = tot_cost_without - objective
+
 
     # print("n_households:", n_households)
     # print("objective:", objective)
@@ -40,6 +43,9 @@ def func_1():
     tot_conso = tot_conso / 1000000  # Convert to MWh if needed
     puissance_totale = puissance_totale / 1000000  # Convert to MWh if needed
     puissance_produite = puissance_produite / 1000000  # Convert to MWh if needed
+    
+    lcoe_with = tot_cost_with / tot_conso  # LCOE with battery en eur/MWh
+    lcoe_without = tot_cost_without / tot_conso  # LCOE without battery  en eur/MWh
     
     fig, ax1 = plt.subplots(figsize=(10, 6))
     ax1.plot(tot_conso, self_suffi, label='Self Sufficiency (%)', color='blue', marker='o')
@@ -75,6 +81,15 @@ def func_1():
     ax5.plot(tot_conso, objective/tot_conso, label='Total gain per MWh (eur/MWh)', color='brown', marker='o')
     ax5.set_xlabel('Total Consumption (MWh/year)')
     ax5.set_ylabel('Total gain per MWh (eur/MWh)')
+    ax5.set_title('Total Gain per MWh of the community')
+    plt.show()
+    
+    fig, ax6 = plt.subplots(figsize=(10, 6))
+    ax6.plot(tot_conso, lcoe_with, label='LCOE with PV and electricity sharing(eur/MWh)', color='cyan', marker='o')
+    ax6.plot(tot_conso, lcoe_without, label='Base LCOE (eur/MWh)', color='magenta', marker='x')
+    ax6.set_xlabel('Total Consumption (MWh/year)')
+    ax6.set_ylabel('LCOE (eur/MWh)')
+    ax6.legend()
     plt.show()
 func_1()
 
