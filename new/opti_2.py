@@ -10,7 +10,7 @@ import pandas as pd
 import pandas as pd
 
 
-def first( load_profile_file=None, production_profile_file=None, capex_battery=0.03, injection_price=0.04, n_households=None, max_area=None, min_area=None):
+def first( load_profile_file=None, production_profile_file=None, capex_battery=0.3, injection_price=0.04, n_households=None, max_area=None, min_area=None):
     gurobi = SolverFactory('gurobi')
     m = ConcreteModel()
     
@@ -47,20 +47,20 @@ def first( load_profile_file=None, production_profile_file=None, capex_battery=0
     #VARIABLES
     #########################
     if max_area is None:
-        max_area = 4000
+        max_area = 10000
     if min_area is None:
-        min_area = 11
+        min_area = 2500
     
         
     max_kwc = max_area * 0.182  # Maximum kWc based on the area, 1 kWc = 5.5 m²
-    area_init = max_area * 0.5  # Initial area set to 50% of the maximum area
+    area_init = (max_area+min_area) * 0.5  # Initial area set to 50% of the maximum area
     kwc_init = area_init * 0.182  # Initial kWc based on the initial area
     
     min_kwc = min_area * 0.182  # Minimum kWc based on the minimum area
     
     m.pv_area = Var(within=NonNegativeReals, bounds=(min_area, max_area), initialize=area_init)  # Area of the PV panels in m²
-    m.wh_battery = Var(within=NonNegativeReals, bounds=(0,250000), initialize=10000)
-    m.p_bat_max = Var(within=NonNegativeReals, initialize=5000)
+    m.wh_battery = Var(within=NonNegativeReals, bounds=(0,200000), initialize=80000)
+    m.p_bat_max = Var(within=NonNegativeReals, initialize=40000)
     m.p = Var(m.households, m.time, within=NonNegativeReals, initialize=0)  # Power to each household in W
     m.p_bat_pos = Var(m.time, within=NonNegativeReals, initialize=0)
     m.p_bat_neg = Var(m.time, within=NonNegativeReals, initialize=0)  # Power to the battery in W
@@ -371,7 +371,7 @@ def main_simu():
     results = []
     production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"  # adapte le chemin si besoin
 
-    for n in range(1,49):  # adapte la liste à tes cas
+    for n in range(30,49):  # adapte la liste à tes cas
         #load_profile_file = f"C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/{n}_households_0_years.csv"
         load_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/combined_household_power_consumption_48_2.csv"
         try:
@@ -390,15 +390,15 @@ def main_simu():
 
     # Pour voir le résultat
     print(df)
-    df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_simulations_unconst_capex_03_otherdata.csv", index=False)
+    df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_simulations_unconst_capex_03_otherdata_2.csv", index=False)
     
-main_simu()
+#main_simu()
 
 def twenty_households():
     production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"  # adapte le chemin si besoin
     load_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/20_households_0_years.csv"
-    max_area = np.linspace(50, 2000, 20)  # Exemple de valeurs pour max_area
-    min_area = np.linspace(20, 1000, 20)  # Exemple de valeurs pour min_area
+    max_area = np.linspace(50, 1250, 20)  # Exemple de valeurs pour max_area
+    min_area = np.linspace(20, 750, 20)  # Exemple de valeurs pour min_area
     results = []
     for i in range(len(max_area)):
         try:
@@ -414,13 +414,13 @@ def twenty_households():
     ]
     df = pd.DataFrame(results, columns=columns)
     print(df)
-    df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_twenty_households.csv", index=False)
+    df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_twenty_households_correct_2.csv", index=False)
 #twenty_households()
 
 
 def capex_batt():
-    capexes = np.array([0.015])
-    injection_prices = np.array([0.04,0.05,0.06,0.07,0.08,0.09,0.1])
+    capexes = np.array([0.1])
+    injection_prices = np.linspace(0.06,0.1,5)
     
     production_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/production_profile.csv"  # adapte le chemin si besoin
     load_profile_file = "C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/load_profile_simu/20_households_0_years.csv"
@@ -435,25 +435,25 @@ def capex_batt():
                 print(f"Erreur pour capex {capex} et injection price {injection_price} : {e}")
                 continue
             
-    capexes_2 = np.array([0.02])
-    injection_prices_2 = np.array([0.05,0.06,0.07])
+    # capexes_2 = np.linspace(0.1,0.3,4)
+    # injection_prices_2 = np.array([0.05])
     
-    for capex in capexes_2:
-        for injection_price in injection_prices_2:
-            try:
-                res = first(load_profile_file, production_profile_file, capex_battery=capex, injection_price=injection_price)
-                results.append((capex, injection_price) + res)
-                print(f"Résultat pour capex {capex} et injection price {injection_price} : {res}")
-            except Exception as e:
-                print(f"Erreur pour capex {capex} et injection price {injection_price} : {e}")
-                continue
+    # for capex in capexes_2:
+    #     for injection_price in injection_prices_2:
+    #         try:
+    #             res = first(load_profile_file, production_profile_file, capex_battery=capex, injection_price=injection_price)
+    #             results.append((capex, injection_price) + res)
+    #             print(f"Résultat pour capex {capex} et injection price {injection_price} : {res}")
+    #         except Exception as e:
+    #             print(f"Erreur pour capex {capex} et injection price {injection_price} : {e}")
+    #             continue
     columns = [
         "capex_battery", "injection_price", "n_households", "objective", "kWc", "wh_battery",
         "puissance_totale", "puissance_produite", "tot_conso", "p_bat_max", "total_cost_without"
     ]
     df = pd.DataFrame(results, columns=columns)
     print(df)
-    df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_capex_battery_2.csv", index=False)
+    df.to_csv("C:/Users/simva/OneDrive/Documents/1 Master 2/Mémoire/code/memoire_partage_elec/new/resultats_capex_battery_correct_4.csv", index=False)
     
 
 #capex_batt()
